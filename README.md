@@ -1,26 +1,25 @@
 # Smartling
 
-A client implementation of the [Smartling Translation API](https://docs.smartling.com/display/docs/Smartling+Translation+API)
+A client implementation of the [Smartling Translation API](https://docs.smartling.com/display/docs/Smartling+Translation+API) in Go.
 
+It consists of a library for use in other projects, and a CLI tool.
 
 ## Using the Library
 
-```
+You can find documentation at http://godoc.org/github.com/99designs/smartling
+
+```go
 import "github.com/99designs/smartling"
-
 client := smartling.NewClient(apiKey, projectId)
-
 client.List(smartling.ListRequest{})
-
 ```
 
 ## CLI tool
 
-The CLI tool is designed for two purposes.
+The `smartling` CLI tool provides a familiar unix-like command interface to the Smartling API, as well as providing a `project` command to manage a project's local files.
 
-### API commands
+Install it with `go install github.com/99designs/smartling/cli/smartling`
 
-Provide a familiar unix-like command interface to the Smartling API.
 ```
 COMMANDS:
    ls           list remote files
@@ -31,37 +30,53 @@ COMMANDS:
    rm           removes a remote file
    lastmodified shows when a remote file was modified last
    locales      list the locales for the project
+   project      manage local project files
 ```
 
-### `project` command
+### The `project` command
 
-The `project` command helps manage a local project's translation files.
-
-When working in a dev environment, it is not desirable to be overwriting the Smartling project files constantly. So these commands use temporary files to allow pushing and pulling translations as required.
+When working in a dev environment, it is not desirable to be clobbering the Smartling project files. So these commands use temporary files and prefixes to allow "pushing" and "pulling" translations as required.
 
 ```
 COMMANDS:
    status   show the status of the project's local files
-   pull     translate the local project files using Smartling as a translation memory
-   push     Upload the local project files to Smartling, using the git branch as a prefix
+   pull     translate local project files using Smartling as a translation memory
+   push     upload local project files to Smartling, using the git branch as a prefix
    help, h  Shows a list of commands or help for one command
 ```
+
+Other cool features:
+- downloaded translation files are cached for 4 hours in `~/.smartling/cache`
+- concurrent operations
+- filetypes get detected automatically
+
 
 ### Configuration file
 
 The CLI tool uses a project level config file called `smartling.yml` for configuration.
 
 Example config:
-```
-apikey: "11111111-2222-3333-4444-555555555555"
-projectid: "666666666"
+```yaml
+apikey: "11111111-2222-3333-4444-555555555555"             # Required
+projectid: "666666666"                                     # Required
 
-fileconfig:
-  filetype: "xliff"
+fileconfig:                                                # Extra config for translation files
+  filetype: "xliff"                                        # Override the detected file type
   parserconfig:
     placeholderformat: "%[^%]+%"
-  pullfilepath: "{{.BaseName}}.{{.Locale}}.{{.Extension}}"
+  pullfilepath: "{{.BaseName}}.{{.Locale}}.{{.Extension}}" # The naming scheme when pulling files
 
-files:
-  - test.xlf
+files:                                                     # Required
+  - translations/file1.xlf
+  - translations/file2.xlf
 ```
+
+## TODO
+ - docs
+ - tests
+ - push should only upload if the file has untranslated strings
+ - make more things configurable
+  - push prefix
+  - cache maxage
+  - cache location
+ - some error handling could be a bit nicer

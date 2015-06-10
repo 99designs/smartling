@@ -82,7 +82,7 @@ var ProjectCommand = cli.Command{
 			},
 		}, {
 			Name:  "pull",
-			Usage: "Translate the local project files using Smartling as a translation memory",
+			Usage: "translate local project files using Smartling as a translation memory",
 
 			Action: func(c *cli.Context) {
 				locales, err := client.Locales()
@@ -118,7 +118,7 @@ var ProjectCommand = cli.Command{
 			},
 		}, {
 			Name:        "push",
-			Usage:       "Upload the local project files to Smartling, using the git branch as a prefix",
+			Usage:       "upload local project files, using the git branch or user name as a prefix",
 			Description: "push",
 			Flags: []cli.Flag{
 				cli.StringFlag{
