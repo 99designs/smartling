@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -24,7 +25,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "smartling"
 	app.Usage = "manage translation files using Smartling"
-	app.Before = func(c *cli.Context) (err error) {
+	app.Before = func(c *cli.Context) error {
 		apiKey := c.String("apikey")
 		projectId := c.String("projectid")
 		configFile := c.String("configfile")
@@ -32,7 +33,11 @@ func main() {
 			configFile = "smartling.yml"
 		}
 
-		ProjectConfig, loadProjectErr = loadConfig(configFile)
+		var err error
+		ProjectConfig, err = loadConfig(configFile)
+		if err != nil {
+			loadProjectErr = fmt.Errorf("Error loading %s: %s", configFile, err.Error())
+		}
 
 		if ProjectConfig != nil {
 			if apiKey == "" {

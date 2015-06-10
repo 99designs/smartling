@@ -57,6 +57,8 @@ func (ss stringSlice) contains(s string) bool {
 	return false
 }
 
+// only let 1 file upload at once to avoid clobbering
+// FIXME: we should handle this better
 var uploadMutex = sync.Mutex{}
 var tempFilesUploaded = stringSlice{}
 
@@ -108,7 +110,7 @@ func translateViaCache(locale, localpath string, filetype smartling.FileType, pa
 	// get cached file
 	if cacheFile, err := os.Open(cacheFilePath); err == nil {
 		if cfStat, err := cacheFile.Stat(); err == nil {
-			if cfStat.ModTime().After(time.Now().Add(time.Duration(-cacheTtl))) {
+			if time.Now().Sub(cfStat.ModTime()) < cacheMaxAge {
 				if b, err = ioutil.ReadFile(cacheFilePath); err == nil {
 					return true, b, nil, ch // return the cached data
 				}
@@ -122,7 +124,7 @@ func translateViaCache(locale, localpath string, filetype smartling.FileType, pa
 		return
 	}
 
-	// write cache
+	// write to cache
 	err = ioutil.WriteFile(cacheFilePath, b, 0644)
 	if err != nil {
 		return

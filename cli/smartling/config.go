@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -18,8 +19,8 @@ import (
 var ProjectConfig *Config
 var loadProjectErr error
 
-var defaultPullDestination = "{{.PathWithoutExt}}.{{.Locale}}{{.Ext}}"
-var cacheTtl = time.Duration(4 * time.Hour)
+var defaultPullDestination = "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}"
+var cacheMaxAge = time.Duration(4 * time.Hour)
 
 type FileConfig struct {
 	FileType     smartling.FileType
@@ -54,8 +55,12 @@ func pushPrefix() string {
 
 	if prefix == "" {
 		u, err := user.Current()
-		panic(err.Error())
-		prefix = u.Name
+		panicIfErr(err)
+		prefix = u.Username
+	}
+
+	if prefix == "" {
+		log.Panicln("Can't find a prefix")
 	}
 
 	return prefix

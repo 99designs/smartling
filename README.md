@@ -60,15 +60,15 @@ Example config:
 apikey: "11111111-2222-3333-4444-555555555555"             # Required
 projectid: "666666666"                                     # Required
 
+files:                                                     # Files in the project
+  - translations/file1.xlf
+  - translations/file2.xlf
+
 fileconfig:                                                # Extra config for translation files
   filetype: "xliff"                                        # Override the detected file type
   parserconfig:
     placeholderformat: "%[^%]+%"
-  pullfilepath: "{{.BaseName}}.{{.Locale}}.{{.Extension}}" # The naming scheme when pulling files
-
-files:                                                     # Required
-  - translations/file1.xlf
-  - translations/file2.xlf
+  pullfilepath: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}.{{.Ext}}" # The naming scheme when pulling files
 ```
 
 ## TODO

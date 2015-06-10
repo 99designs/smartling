@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"path/filepath"
 	"strings"
@@ -163,7 +164,7 @@ func filetypeForProjectFile(projectFilepath string) smartling.FileType {
 		ft = ProjectConfig.FileConfig.FileType
 	}
 	if ft == "" {
-		panic("Can't determine file type for " + projectFilepath)
+		log.Panicln("Can't determine file type for " + projectFilepath)
 	}
 
 	return ft
@@ -186,12 +187,11 @@ func localRelativeFilePath(remotepath string) string {
 
 func localPullFilePath(p, locale string) string {
 	parts := FilenameParts{
-		Path:           p,
-		Dir:            filepath.Dir(p),
-		Base:           filepath.Base(p),
-		Ext:            filepath.Ext(p),
-		PathWithoutExt: strings.TrimSuffix(p, filepath.Ext(p)),
-		Locale:         locale,
+		Path:   p,
+		Dir:    filepath.Dir(p),
+		Base:   filepath.Base(p),
+		Ext:    filepath.Ext(p),
+		Locale: locale,
 	}
 
 	dt := defaultPullDestination
@@ -200,7 +200,11 @@ func localPullFilePath(p, locale string) string {
 	}
 
 	out := bytes.NewBufferString("")
-	tmpl, err := template.New("name").Parse(dt)
+	tmpl := template.New("name")
+	tmpl.Funcs(template.FuncMap{
+		"TrimSuffix": strings.TrimSuffix,
+	})
+	_, err := tmpl.Parse(dt)
 	panicIfErr(err)
 
 	err = tmpl.Execute(out, parts)
