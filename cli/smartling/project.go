@@ -5,51 +5,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"text/tabwriter"
 	"text/template"
 
 	"github.com/99designs/smartling"
 	"github.com/codegangsta/cli"
 )
-
-func statusOfProjectFile(remotepath, locale string) string {
-	r, err := client.Status(remotepath, locale)
-	panicIfErr(err)
-
-	var pctComplete float64
-	if r.CompletedStringCount != 0 {
-		pctComplete = float64(r.CompletedStringCount) * 100 / float64(r.StringCount)
-	}
-
-	return fmt.Sprintf("  %-5s %d%%\n", locale, int(math.Floor(pctComplete)))
-}
-
-func printStatusOfProjectFile(projectFilepath string, locales []smartling.Locale) {
-	tmpfile, err := uploadAsTempFile(
-		localRelativeFilePath(projectFilepath),
-		filetypeForProjectFile(projectFilepath),
-		ProjectConfig.FileConfig.ParserConfig,
-	)
-	panicIfErr(err)
-
-	statuses := ""
-
-	var wgLocales sync.WaitGroup
-	for _, l := range locales {
-		wgLocales.Add(1)
-		go func(locale string) {
-			defer wgLocales.Done()
-			s := statusOfProjectFile(tmpfile, locale)
-			statuses += s
-		}(l.Locale)
-	}
-	wgLocales.Wait()
-
-	fmt.Printf("%s:\n%s", projectFilepath, statuses)
-}
 
 var ProjectCommand = cli.Command{
 	Name:  "project",
@@ -62,99 +27,153 @@ var ProjectCommand = cli.Command{
 		return nil
 	},
 	Subcommands: []cli.Command{
-		{
-			Name:        "status",
-			Usage:       "show the status of the project's local files",
-			Description: "status",
+		projectStatusCommand,
+		projectPullCommand,
+		projectPushCommand,
+	},
+}
 
-			Action: func(c *cli.Context) {
-				locales, err := client.Locales()
-				panicIfErr(err)
+var projectStatusCommand = cli.Command{
+	Name:        "status",
+	Usage:       "show the status of the project's local files",
+	Description: "status",
+	Action: func(c *cli.Context) {
 
-				var wgFiles sync.WaitGroup
-				for _, projectFilepath := range ProjectConfig.Files {
-					wgFiles.Add(1)
-					go func(projectFilepath string, locales []smartling.Locale) {
-						defer wgFiles.Done()
-						printStatusOfProjectFile(projectFilepath, locales)
-					}(projectFilepath, locales)
-				}
-				wgFiles.Wait()
-			},
-		}, {
-			Name:  "pull",
-			Usage: "translate local project files using Smartling as a translation memory",
+		projectFilepaths := ProjectConfig.Files
+		locales, err := client.Locales()
+		panicIfErr(err)
 
-			Action: func(c *cli.Context) {
-				locales, err := client.Locales()
-				panicIfErr(err)
+		var wg sync.WaitGroup
+		statuses := make(map[string]map[string]smartling.File)
 
-				var wg sync.WaitGroup
-				for _, projectFilepath := range ProjectConfig.Files {
-					for _, l := range locales {
-						wg.Add(1)
-						go func(locale, projectFilepath string) {
-							defer wg.Done()
+		for _, projectFilepath := range projectFilepaths {
+			tmpfile, err := uploadAsTempFile(
+				localRelativeFilePath(projectFilepath),
+				filetypeForProjectFile(projectFilepath),
+				ProjectConfig.FileConfig.ParserConfig,
+			)
+			panicIfErr(err)
 
-							hit, b, err, _ := translateViaCache(
-								locale,
-								localRelativeFilePath(projectFilepath),
-								filetypeForProjectFile(projectFilepath),
-								ProjectConfig.FileConfig.ParserConfig,
-							)
-							panicIfErr(err)
+			for _, l := range locales {
+				wg.Add(1)
+				go func(tmpfile, locale, projectFilepath string) {
+					defer wg.Done()
 
-							fp := localPullFilePath(projectFilepath, locale)
-							cached := ""
-							if hit {
-								cached = "(using cache)"
-							}
-							fmt.Println(fp, cached)
-							err = ioutil.WriteFile(fp, b, 0644)
-							panicIfErr(err)
-						}(l.Locale, projectFilepath)
+					file, err := client.Status(tmpfile, locale)
+					panicIfErr(err)
+
+					_, ok := statuses[projectFilepath]
+					if !ok {
+						mm := make(map[string]smartling.File)
+						statuses[projectFilepath] = mm
 					}
-				}
-				wg.Wait()
-			},
-		}, {
-			Name:        "push",
-			Usage:       "upload local project files, using the git branch or user name as a prefix",
-			Description: "push",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "prefix",
-					Usage: "Use the specified prefix instead of the default",
-				},
-			},
-			Action: func(c *cli.Context) {
-				prefix := c.String("prefix")
-				if prefix == "" {
-					prefix = pushPrefix()
-				}
-				prefix = filepath.Clean("/" + prefix)
-				fmt.Println("Using prefix", prefix)
+					statuses[projectFilepath][locale] = file
+				}(tmpfile, l.Locale, projectFilepath)
+			}
+		}
+		wg.Wait()
 
-				var wg sync.WaitGroup
-				for _, projectFilepath := range ProjectConfig.Files {
-					wg.Add(1)
-					go func(projectFilepath string) {
-						defer wg.Done()
+		fmt.Print("\n")
+		fmt.Println("Translation counts: Awaiting Authorization -> In Progress -> Completed")
+		fmt.Print("\n")
 
-						f := filepath.Clean(prefix + "/" + projectFilepath)
+		// Format in columns
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 
-						fmt.Println("Uploading", f)
-						_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-							FileUri:      f,
-							FileType:     filetypeForProjectFile(projectFilepath),
-							ParserConfig: ProjectConfig.FileConfig.ParserConfig,
-						})
-						panicIfErr(err)
-					}(projectFilepath)
-				}
-				wg.Wait()
-			},
+		fmt.Fprint(w, " ")
+		for _, locale := range locales {
+			fmt.Fprint(w, "\t", locale.Locale)
+		}
+		fmt.Fprint(w, "\n")
+
+		for _, projectFilepath := range projectFilepaths {
+			fmt.Fprint(w, projectFilepath)
+			for _, locale := range locales {
+				status := statuses[projectFilepath][locale.Locale]
+				awaitingAuth := status.StringCount - status.ApprovedStringCount
+				inProgress := status.StringCount - status.CompletedStringCount - awaitingAuth
+				fmt.Fprint(w, "\t", awaitingAuth, "->", inProgress, "->", status.CompletedStringCount)
+			}
+			fmt.Fprint(w, "\n")
+		}
+		w.Flush()
+	},
+}
+
+var projectPullCommand = cli.Command{
+	Name:  "pull",
+	Usage: "translate local project files using Smartling as a translation memory",
+
+	Action: func(c *cli.Context) {
+		locales, err := client.Locales()
+		panicIfErr(err)
+
+		var wg sync.WaitGroup
+		for _, projectFilepath := range ProjectConfig.Files {
+			for _, l := range locales {
+				wg.Add(1)
+				go func(locale, projectFilepath string) {
+					defer wg.Done()
+
+					hit, b, err, _ := translateViaCache(
+						locale,
+						localRelativeFilePath(projectFilepath),
+						filetypeForProjectFile(projectFilepath),
+						ProjectConfig.FileConfig.ParserConfig,
+					)
+					panicIfErr(err)
+
+					fp := localPullFilePath(projectFilepath, locale)
+					cached := ""
+					if hit {
+						cached = "(using cache)"
+					}
+					fmt.Println(fp, cached)
+					err = ioutil.WriteFile(fp, b, 0644)
+					panicIfErr(err)
+				}(l.Locale, projectFilepath)
+			}
+		}
+		wg.Wait()
+	},
+}
+
+var projectPushCommand = cli.Command{
+	Name:        "push",
+	Usage:       "upload local project files, using the git branch or user name as a prefix",
+	Description: "push",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "prefix",
+			Usage: "Use the specified prefix instead of the default",
 		},
+	},
+	Action: func(c *cli.Context) {
+		prefix := c.String("prefix")
+		if prefix == "" {
+			prefix = pushPrefix()
+		}
+		prefix = filepath.Clean("/" + prefix)
+		fmt.Println("Using prefix", prefix)
+
+		var wg sync.WaitGroup
+		for _, projectFilepath := range ProjectConfig.Files {
+			wg.Add(1)
+			go func(projectFilepath string) {
+				defer wg.Done()
+
+				f := filepath.Clean(prefix + "/" + projectFilepath)
+
+				fmt.Println("Uploading", f)
+				_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
+					FileUri:      f,
+					FileType:     filetypeForProjectFile(projectFilepath),
+					ParserConfig: ProjectConfig.FileConfig.ParserConfig,
+				})
+				panicIfErr(err)
+			}(projectFilepath)
+		}
+		wg.Wait()
 	},
 }
 

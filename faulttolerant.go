@@ -22,12 +22,14 @@ func (c *FaultTolerantClient) execWithRetry(f func() error) {
 	err := f()
 
 	retries := c.RetriesWhenResourceLocked
+	backoff := 1 * time.Second
 
 	for isResourceLockedError(err) && retries > 0 {
 		// log.Println("Resource locked, retrying")
-		time.Sleep(2 * time.Second)
+		time.Sleep(backoff)
 		f()
 		retries--
+		backoff = backoff * 2
 	}
 }
 

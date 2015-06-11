@@ -32,20 +32,6 @@ func findCachePath() string {
 	return cachePath
 }
 
-func mustSha1File(filePath string) string {
-	file, err := os.Open(filePath)
-	panicIfErr(err)
-
-	defer file.Close()
-
-	hash := sha1.New()
-	_, err = io.Copy(hash, file)
-	panicIfErr(err)
-
-	b := []byte{}
-	return hex.EncodeToString(hash.Sum(b))
-}
-
 type stringSlice []string
 
 func (ss stringSlice) contains(s string) bool {
@@ -58,15 +44,22 @@ func (ss stringSlice) contains(s string) bool {
 }
 
 // only let 1 file upload at once to avoid clobbering
-// FIXME: we should handle this better
-var uploadMutex = sync.Mutex{}
 var tempFilesUploaded = stringSlice{}
+var uploadMutex = map[string]*sync.Mutex{}
+var mapMutex sync.Mutex
 
 func uploadAsTempFile(localpath string, filetype smartling.FileType, parserConfig map[string]string) (remotepath string, err error) {
-	uploadMutex.Lock()
-	defer uploadMutex.Unlock()
 
-	tmppath := "/tmp/" + mustSha1File(localpath)
+	mapMutex.Lock()
+	if _, ok := uploadMutex[localpath]; !ok {
+		uploadMutex[localpath] = &sync.Mutex{}
+	}
+	mapMutex.Unlock()
+
+	uploadMutex[localpath].Lock()
+	defer uploadMutex[localpath].Unlock()
+
+	tmppath := "/tmp/" + projectFileHash("", localpath, filetype, parserConfig)
 	if tempFilesUploaded.contains(tmppath) {
 		return tmppath, nil
 	}
@@ -86,7 +79,7 @@ func uploadAsTempFile(localpath string, filetype smartling.FileType, parserConfi
 	return tmppath, nil
 }
 
-func cacheHash(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) string {
+func projectFileHash(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) string {
 	file, err := os.Open(localpath)
 	panicIfErr(err)
 	defer file.Close()
@@ -104,7 +97,7 @@ func cacheHash(locale, localpath string, filetype smartling.FileType, parserConf
 
 func translateViaCache(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (hit bool, b []byte, err error, ch string) {
 
-	ch = cacheHash(locale, localpath, filetype, parserConfig)
+	ch = projectFileHash(locale, localpath, filetype, parserConfig)
 	cacheFilePath := filepath.Join(cachePath, ch)
 
 	// get cached file
@@ -119,7 +112,7 @@ func translateViaCache(locale, localpath string, filetype smartling.FileType, pa
 	}
 
 	// translate
-	b, err = translate(locale, localpath, filetype, parserConfig)
+	b, err = translateViaSmartling(locale, localpath, filetype, parserConfig)
 	if err != nil {
 		return
 	}
@@ -133,20 +126,16 @@ func translateViaCache(locale, localpath string, filetype smartling.FileType, pa
 	return
 }
 
-func translate(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
+func translateViaSmartling(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
 	tmppath, err := uploadAsTempFile(localpath, filetype, parserConfig)
 	if err != nil {
 		return
 	}
 
-	// download
 	b, err = client.Get(&smartling.GetRequest{
 		FileUri: tmppath,
 		Locale:  locale,
 	})
-	if err != nil {
-		return
-	}
 
 	return
 }
@@ -155,14 +144,13 @@ func cleanupTempFiles() {
 	var wg sync.WaitGroup
 	for _, f := range tempFilesUploaded {
 		wg.Add(1)
-		go func() {
+		go func(f string) {
 			defer wg.Done()
 			err := client.Delete(f)
 			if err != nil {
 				log.Println(err.Error())
 			}
-		}()
-
+		}(f)
 	}
 	wg.Wait()
 }

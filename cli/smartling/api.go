@@ -120,10 +120,9 @@ var RmCommand = cli.Command{
 	Usage:       "removes a remote file",
 	Description: "rm <remote file>",
 	Action: func(c *cli.Context) {
-		remotepath := c.Args().Get(0)
-
-		err := client.Delete(remotepath)
-		panicIfErr(err)
+		for _, remotepath := range c.Args() {
+			panicIfErr(client.Delete(remotepath))
+		}
 	},
 }
 

@@ -127,7 +127,7 @@ const (
 	ContextMatchingInstrumented RetrievalType = "contextMatchingInstrumented"
 )
 
-type SmartlingResponseWrapper struct {
+type smartlingResponseWrapper struct {
 	Response SmartlingResponse `json:"response"`
 }
 
@@ -167,7 +167,7 @@ func unmarshalResponseData(r *http.Response, data interface{}) error {
 		return err
 	}
 
-	p := SmartlingResponseWrapper{}
+	p := smartlingResponseWrapper{}
 	err = json.Unmarshal(body, &p)
 
 	if err == nil && p.Response.IsError() {

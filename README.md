@@ -68,7 +68,7 @@ files:                                                     # Files in the projec
 fileconfig:                                                # Extra config for translation files
   filetype: "xliff"                                        # Override the detected file type
   parserconfig:
-    placeholderformat: "%[^%]+%"
+    placeholder_format_custom: "%[^%]+%"
   pullfilepath: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}.{{.Ext}}" # The naming scheme when pulling files
 ```
 

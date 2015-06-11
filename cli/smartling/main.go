@@ -57,7 +57,7 @@ func main() {
 			sc = smartling.NewClient(apiKey, projectId)
 		}
 
-		client = &smartling.FaultTolerantClient{sc, 3}
+		client = &smartling.FaultTolerantClient{sc, 4}
 
 		return nil
 	}
