@@ -45,6 +45,17 @@ func fetchRemoteFileList() stringSlice {
 	return files
 }
 
+func fetchLocales() []string {
+	ll := []string{}
+	locales, err := client.Locales()
+	panicIfErr(err)
+	for _, l := range locales {
+		ll = append(ll, l.Locale)
+	}
+
+	return ll
+}
+
 var projectStatusCommand = cli.Command{
 	Name:        "status",
 	Usage:       "show the status of the project's remote files",
@@ -110,7 +121,7 @@ var projectStatusCommand = cli.Command{
 			fmt.Fprint(w, projectFilepath)
 			for _, locale := range locales {
 				status := statuses[projectFilepath][locale.Locale]
-				fmt.Fprint(w, "\t", status.AwaitingAuthorizationCount(), "->", status.InProgressCount(), "->", status.CompletedStringCount)
+				fmt.Fprint(w, "\t", status.AwaitingAuthorizationStringCount(), "->", status.InProgressStringCount(), "->", status.CompletedStringCount)
 			}
 			fmt.Fprint(w, "\n")
 		}
@@ -185,10 +196,48 @@ func prefixOrGitPrefix(prefix string) string {
 	return prefix
 }
 
+type RemoteFileStatus struct {
+	RemoteFilePath string
+	Statuses       map[string]*smartling.FileStatus
+}
+
+func (r *RemoteFileStatus) NotCompletedStringCount() int {
+	c := 0
+	for _, fs := range r.Statuses {
+		c += fs.NotCompletedStringCount()
+	}
+	return c
+}
+
+func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileStatus {
+	ss := RemoteFileStatus{
+		RemoteFilePath: remoteFilePath,
+		Statuses:       map[string]*smartling.FileStatus{},
+	}
+
+	var wg sync.WaitGroup
+	for _, locale := range locales {
+		wg.Add(1)
+		go func(f, l string) {
+			defer wg.Done()
+
+			s, err := client.Status(f, l)
+			panicIfErr(err)
+			ss.Statuses[l] = &s
+
+		}(remoteFilePath, locale)
+	}
+	wg.Wait()
+
+	return ss
+}
+
 var projectPushCommand = cli.Command{
-	Name:        "push",
-	Usage:       "upload local project files with new strings, using the git branch or user name as a prefix",
-	Description: "push [<prefix>]",
+	Name:  "push",
+	Usage: "upload local project files with new strings, using the git branch or user name as a prefix",
+	Description: `push [<prefix>]
+Outputs the uploaded files for the given prefix
+`,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
@@ -196,15 +245,12 @@ var projectPushCommand = cli.Command{
 		}
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
-
-		locales, err := client.Locales()
-		panicIfErr(err)
-		firstLocale := locales[0].Locale
+		locales := fetchLocales()
 
 		var wg sync.WaitGroup
 		for _, projectFilepath := range ProjectConfig.Files {
 			wg.Add(1)
-			go func(projectFilepath string) {
+			go func(prefix, projectFilepath string) {
 				defer wg.Done()
 
 				remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
@@ -216,23 +262,17 @@ var projectPushCommand = cli.Command{
 				})
 				panicIfErr(err)
 
-				fs, err := client.Status(remoteFile, firstLocale)
-				panicIfErr(err)
+				remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
 
-				hasNewStrings := true
-				// when using a prefix, we only want to upload files with new strings
-				if prefix != "" {
-					if fs.AwaitingAuthorizationCount() == 0 {
-						err := client.Delete(remoteFile)
-						panicIfErr(err)
-						hasNewStrings = false
-					}
+				// when using a prefix, we don't want to see files with
+				// completely translated content
+				if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
+					err := client.Delete(remoteFile)
+					panicIfErr(err)
+				} else {
+					fmt.Println(remoteFile)
 				}
-				if hasNewStrings {
-					fmt.Printf("%3d strings Awaiting Authorization in %s\n", fs.AwaitingAuthorizationCount(), remoteFile)
-				}
-
-			}(projectFilepath)
+			}(prefix, projectFilepath)
 		}
 		wg.Wait()
 	},

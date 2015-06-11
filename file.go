@@ -170,12 +170,16 @@ type FileStatus struct {
 	FileType             FileType     `json:"fileType"`
 }
 
-func (fs *FileStatus) AwaitingAuthorizationCount() int {
+func (fs FileStatus) AwaitingAuthorizationStringCount() int {
 	return fs.StringCount - fs.ApprovedStringCount
 }
 
-func (fs *FileStatus) InProgressCount() int {
-	return fs.StringCount - fs.CompletedStringCount - fs.AwaitingAuthorizationCount()
+func (fs FileStatus) InProgressStringCount() int {
+	return fs.NotCompletedStringCount() - fs.AwaitingAuthorizationStringCount()
+}
+
+func (fs FileStatus) NotCompletedStringCount() int {
+	return fs.StringCount - fs.CompletedStringCount
 }
 
 type ListResponse struct {
