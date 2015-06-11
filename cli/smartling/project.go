@@ -38,6 +38,10 @@ var projectStatusCommand = cli.Command{
 	Usage:       "show the status of the project's local files",
 	Description: "status",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 0 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: project status")
+		}
 
 		projectFilepaths := ProjectConfig.Files
 		locales, err := client.Locales()
@@ -103,6 +107,11 @@ var projectPullCommand = cli.Command{
 	Usage: "translate local project files using Smartling as a translation memory",
 
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 0 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: project pull")
+		}
+
 		locales, err := client.Locales()
 		panicIfErr(err)
 
@@ -160,7 +169,7 @@ func getPrefix(c *cli.Context) string {
 var projectPushCommand = cli.Command{
 	Name:        "push",
 	Usage:       "upload local project files with new strings, using the git branch or user name as a prefix",
-	Description: "push [prefix]",
+	Description: "push [<prefix>]",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "prefix",
@@ -168,6 +177,11 @@ var projectPushCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) {
+		if len(c.Args()) > 1 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: push [<prefix>]")
+		}
+
 		prefix := getPrefix(c)
 
 		locales, err := client.Locales()

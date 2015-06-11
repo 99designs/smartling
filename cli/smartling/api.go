@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
 	"time"
@@ -14,6 +15,11 @@ var LsCommand = cli.Command{
 	Name:  "ls",
 	Usage: "list remote files",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 0 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: ls")
+		}
+
 		files, err := client.List(smartling.ListRequest{})
 		panicIfErr(err)
 
@@ -31,6 +37,11 @@ var StatusCommand = cli.Command{
 	Usage:       "display the translation status of a remote file",
 	Description: "stat <remote file> <locale>",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 2 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: stat <remote file> <locale>")
+		}
+
 		remotepath := c.Args().Get(0)
 		locale := c.Args().Get(1)
 
@@ -52,6 +63,11 @@ var GetCommand = cli.Command{
 	Usage:       "downloads a remote file",
 	Description: "get <remote file>",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 1 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: get <remote file>")
+		}
+
 		remotepath := c.Args().Get(0)
 
 		b, err := client.Get(&smartling.GetRequest{
@@ -75,6 +91,11 @@ var PutCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 2 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: put <local file> <remote file>")
+		}
+
 		localpath := c.Args().Get(0)
 		remotepath := c.Args().Get(1)
 
@@ -96,9 +117,9 @@ var PutCommand = cli.Command{
 		})
 		panicIfErr(err)
 
-		fmt.Println("Overwritten:", r.OverWritten)
+		fmt.Println("Overwritten: ", r.OverWritten)
 		fmt.Println("String Count:", r.StringCount)
-		fmt.Println("Word Count:", r.WordCount)
+		fmt.Println("Word Count:  ", r.WordCount)
 	},
 }
 
@@ -107,6 +128,11 @@ var RenameCommand = cli.Command{
 	Usage:       "renames a remote file",
 	Description: "rename <remote file> <new smartling file>",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 2 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: rename <remote file> <new smartling file>")
+		}
+
 		remotepath := c.Args().Get(0)
 		newremotepath := c.Args().Get(0)
 
@@ -118,8 +144,13 @@ var RenameCommand = cli.Command{
 var RmCommand = cli.Command{
 	Name:        "rm",
 	Usage:       "removes a remote file",
-	Description: "rm <remote file>",
+	Description: "rm <remote file>...",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) < 1 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: rm <remote file>...")
+		}
+
 		for _, remotepath := range c.Args() {
 			panicIfErr(client.Delete(remotepath))
 		}
@@ -131,6 +162,11 @@ var LastmodifiedCommand = cli.Command{
 	Usage:       "shows when a remote file was modified last",
 	Description: "lastmodified <remote file>",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 1 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: lastmodified <remote file>")
+		}
+
 		remotepath := c.Args().Get(0)
 
 		items, err := client.LastModified(smartling.LastModifiedRequest{
@@ -149,6 +185,11 @@ var LocalesCommand = cli.Command{
 	Name:  "locales",
 	Usage: "list the locales for the project",
 	Action: func(c *cli.Context) {
+		if len(c.Args()) != 0 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: locales")
+		}
+
 		r, err := client.Locales()
 		panicIfErr(err)
 
