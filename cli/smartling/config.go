@@ -23,17 +23,17 @@ var defaultPullDestination = "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}"
 var cacheMaxAge = time.Duration(4 * time.Hour)
 
 type FileConfig struct {
-	FileType     smartling.FileType
-	ParserConfig map[string]string
-	PullFilePath string
+	FileType     smartling.FileType `yaml:"FileType"`
+	ParserConfig map[string]string  `yaml:"ParserConfig"`
+	PullFilePath string             `yaml:"PullFilePath"`
 }
 
 type Config struct {
 	path       string
-	ApiKey     string
-	ProjectId  string
-	Files      []string
-	FileConfig FileConfig
+	ApiKey     string     `yaml:"ApiKey"`
+	ProjectId  string     `yaml:"ProjectId"`
+	Files      []string   `yaml:"Files"`
+	FileConfig FileConfig `yaml:"FileConfig"`
 }
 
 var ErrConfigFileNotExist = errors.New("smartling.yml not found")

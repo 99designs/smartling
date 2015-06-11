@@ -58,24 +58,23 @@ The CLI tool uses a project level config file called `smartling.yml` for configu
 
 Example config:
 ```yaml
-apikey: "11111111-2222-3333-4444-555555555555"             # Required
-projectid: "666666666"                                     # Required
+ApiKey: "11111111-2222-3333-4444-555555555555"             # Smartling API Key
+ProjectId: "666666666"                                     # Smartling Project Id
 
-files:                                                     # Files in the project
+Files:                                                     # Files in the project
   - translations/file1.xlf
   - translations/file2.xlf
 
-fileconfig:                                                # Extra config for translation files
-  filetype: "xliff"                                        # Override the detected file type
-  parserconfig:
+FileConfig:                                                # Extra config for translation files
+  FileType: "xliff"                                        # Override the detected file type
+  ParserConfig:
     placeholder_format_custom: "%[^%]+%"
-  pullfilepath: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}.{{.Ext}}" # The naming scheme when pulling files
+  PullFilePath: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}.{{.Ext}}" # The naming scheme when pulling files
 ```
 
 ## TODO
  - docs
  - tests
- - push should only upload if the file has untranslated strings
  - make more things configurable
   - push prefix
   - cache maxage
