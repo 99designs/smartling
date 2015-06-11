@@ -32,11 +32,25 @@ type Config struct {
 	path       string
 	ApiKey     string     `yaml:"ApiKey"`
 	ProjectId  string     `yaml:"ProjectId"`
-	Files      []string   `yaml:"Files"`
+	FileGlobs  []string   `yaml:"Files"`
 	FileConfig FileConfig `yaml:"FileConfig"`
+	hasGlobbed bool
+	files      []string
 }
 
 var ErrConfigFileNotExist = errors.New("smartling.yml not found")
+
+func (c *Config) Files() []string {
+	if !c.hasGlobbed {
+		for _, g := range c.FileGlobs {
+			ff, err := filepath.Glob(g)
+			panicIfErr(err)
+			c.files = append(c.files, ff...)
+		}
+	}
+
+	return c.files
+}
 
 func gitBranch() string {
 	cmd := exec.Command("git", "symbolic-ref", "--short", "HEAD")

@@ -61,8 +61,8 @@ ApiKey: "11111111-2222-3333-4444-555555555555"             # Smartling API Key
 ProjectId: "666666666"                                     # Smartling Project Id
 
 Files:                                                     # Files in the project
-  - translations/file1.xlf
-  - translations/file2.xlf
+  - translations/*.xlf                                     # Globbing can be used,
+  - foo/bar.xlf                                            # as well as individual files
 
 FileConfig:                                                # Optional config for translation files
   FileType: "xliff"                                        # Override the detected file type
@@ -74,7 +74,6 @@ FileConfig:                                                # Optional config for
 ## TODO
  - docs
  - tests
- - globbing in config file
  - make more things configurable
   - cache maxage
   - cache location

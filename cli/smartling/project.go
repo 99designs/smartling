@@ -68,7 +68,6 @@ var projectStatusCommand = cli.Command{
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
 
-		projectFilepaths := ProjectConfig.Files
 		locales, err := client.Locales()
 		panicIfErr(err)
 
@@ -77,7 +76,7 @@ var projectStatusCommand = cli.Command{
 
 		remoteFiles := fetchRemoteFileList()
 
-		for _, projectFilepath := range projectFilepaths {
+		for _, projectFilepath := range ProjectConfig.Files() {
 
 			prefixedProjectFilepath := filepath.Clean("/" + prefix + "/" + projectFilepath)
 			if !remoteFiles.contains(prefixedProjectFilepath) {
@@ -143,7 +142,7 @@ var projectPullCommand = cli.Command{
 		panicIfErr(err)
 
 		var wg sync.WaitGroup
-		for _, projectFilepath := range ProjectConfig.Files {
+		for _, projectFilepath := range ProjectConfig.Files() {
 			for _, l := range locales {
 				wg.Add(1)
 				go func(locale, projectFilepath string) {
@@ -248,7 +247,7 @@ Outputs the uploaded files for the given prefix
 		locales := fetchLocales()
 
 		var wg sync.WaitGroup
-		for _, projectFilepath := range ProjectConfig.Files {
+		for _, projectFilepath := range ProjectConfig.Files() {
 			wg.Add(1)
 			go func(prefix, projectFilepath string) {
 				defer wg.Done()
