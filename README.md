@@ -40,7 +40,7 @@ When working in a dev environment, it is not desirable to be clobbering the Smar
 
 ```
 COMMANDS:
-   status   show the status of the project's local files
+   status   show the status of the project's remote files
    pull     translate local project files using Smartling as a translation memory
    push     upload local project files with new strings, using the git branch or user name as a prefix
    help, h  Shows a list of commands or help for one command

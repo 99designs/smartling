@@ -33,15 +33,29 @@ var ProjectCommand = cli.Command{
 	},
 }
 
+func fetchRemoteFileList() stringSlice {
+	files := stringSlice{}
+	listFiles, err := client.List(smartling.ListRequest{})
+	panicIfErr(err)
+
+	for _, fs := range listFiles {
+		files = append(files, fs.FileUri)
+	}
+
+	return files
+}
+
 var projectStatusCommand = cli.Command{
 	Name:        "status",
-	Usage:       "show the status of the project's local files",
-	Description: "status",
+	Usage:       "show the status of the project's remote files",
+	Description: "status [<prefix>]",
 	Action: func(c *cli.Context) {
-		if len(c.Args()) != 0 {
+		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: project status")
+			log.Fatalln("Usage: status [<prefix>]")
 		}
+
+		prefix := prefixOrGitPrefix(c.Args().Get(0))
 
 		projectFilepaths := ProjectConfig.Files
 		locales, err := client.Locales()
@@ -50,30 +64,32 @@ var projectStatusCommand = cli.Command{
 		var wg sync.WaitGroup
 		statuses := make(map[string]map[string]smartling.FileStatus)
 
+		remoteFiles := fetchRemoteFileList()
+
 		for _, projectFilepath := range projectFilepaths {
-			tmpfile, err := uploadAsTempFile(
-				localRelativeFilePath(projectFilepath),
-				filetypeForProjectFile(projectFilepath),
-				ProjectConfig.FileConfig.ParserConfig,
-			)
-			panicIfErr(err)
+
+			prefixedProjectFilepath := filepath.Clean("/" + prefix + "/" + projectFilepath)
+			if !remoteFiles.contains(prefixedProjectFilepath) {
+				prefixedProjectFilepath = filepath.Clean("/" + projectFilepath)
+			}
 
 			for _, l := range locales {
 				wg.Add(1)
-				go func(tmpfile, locale, projectFilepath string) {
+				go func(remotefile, locale string) {
 					defer wg.Done()
 
-					fs, err := client.Status(tmpfile, locale)
+					fs, err := client.Status(remotefile, locale)
 					panicIfErr(err)
 
-					_, ok := statuses[projectFilepath]
+					_, ok := statuses[remotefile]
 					if !ok {
 						mm := make(map[string]smartling.FileStatus)
-						statuses[projectFilepath] = mm
+						statuses[remotefile] = mm
 					}
-					statuses[projectFilepath][locale] = fs
-				}(tmpfile, l.Locale, projectFilepath)
+					statuses[remotefile][locale] = fs
+				}(prefixedProjectFilepath, l.Locale)
 			}
+
 		}
 		wg.Wait()
 
@@ -90,7 +106,7 @@ var projectStatusCommand = cli.Command{
 		}
 		fmt.Fprint(w, "\n")
 
-		for _, projectFilepath := range projectFilepaths {
+		for projectFilepath, _ := range statuses {
 			fmt.Fprint(w, projectFilepath)
 			for _, locale := range locales {
 				status := statuses[projectFilepath][locale.Locale]
@@ -153,11 +169,14 @@ func cleanPrefix(s string) string {
 	return s
 }
 
-func getPrefix(c *cli.Context) string {
-	prefix := c.String("prefix")
+func prefixOrGitPrefix(prefix string) string {
 	if prefix == "" {
 		prefix = pushPrefix()
 	}
+	if prefix == "master" {
+		prefix = ""
+	}
+
 	prefix = cleanPrefix(prefix)
 
 	if prefix != "" {
@@ -170,19 +189,13 @@ var projectPushCommand = cli.Command{
 	Name:        "push",
 	Usage:       "upload local project files with new strings, using the git branch or user name as a prefix",
 	Description: "push [<prefix>]",
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "prefix",
-			Usage: "Use the specified prefix instead of the default",
-		},
-	},
 	Action: func(c *cli.Context) {
 		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
 			log.Fatalln("Usage: push [<prefix>]")
 		}
 
-		prefix := getPrefix(c)
+		prefix := prefixOrGitPrefix(c.Args().Get(0))
 
 		locales, err := client.Locales()
 		panicIfErr(err)
@@ -216,7 +229,7 @@ var projectPushCommand = cli.Command{
 					}
 				}
 				if hasNewStrings {
-					fmt.Printf("%3d unauthorised strings in %s\n", fs.AwaitingAuthorizationCount(), remoteFile)
+					fmt.Printf("%3d strings Awaiting Authorization in %s\n", fs.AwaitingAuthorizationCount(), remoteFile)
 				}
 
 			}(projectFilepath)
