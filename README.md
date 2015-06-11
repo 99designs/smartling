@@ -43,12 +43,11 @@ COMMANDS:
    status   show the status of the project's remote files
    pull     translate local project files using Smartling as a translation memory
    push     upload local project files with new strings, using the git branch or user name as a prefix
-   help, h  Shows a list of commands or help for one command
 ```
 
 Other cool features:
 - downloaded translation files are cached for 4 hours in `~/.smartling/cache`
-- concurrent operations
+- things mostly happen concurrently
 - filetypes get detected automatically
 
 
@@ -65,7 +64,7 @@ Files:                                                     # Files in the projec
   - translations/file1.xlf
   - translations/file2.xlf
 
-FileConfig:                                                # Extra config for translation files
+FileConfig:                                                # Optional config for translation files
   FileType: "xliff"                                        # Override the detected file type
   ParserConfig:
     placeholder_format_custom: "%[^%]+%"
@@ -75,8 +74,7 @@ FileConfig:                                                # Extra config for tr
 ## TODO
  - docs
  - tests
+ - globbing in config file
  - make more things configurable
-  - push prefix
   - cache maxage
   - cache location
- - some error handling could be a bit nicer
