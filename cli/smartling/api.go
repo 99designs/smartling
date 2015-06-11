@@ -20,7 +20,7 @@ var LsCommand = cli.Command{
 		fmt.Println("total", len(files))
 		for _, f := range files {
 			t := time.Time(f.LastUploaded).Format("2 Jan 3:04")
-			fmt.Printf("%s  %3d strings  %s %s\n", f.FileType, f.StringCount, t, f.FileUri)
+			fmt.Printf("%3d strings  %s  %s\n", f.StringCount, t, f.FileUri)
 		}
 
 	},
@@ -37,13 +37,13 @@ var StatusCommand = cli.Command{
 		r, err := client.Status(remotepath, locale)
 		panicIfErr(err)
 
-		fmt.Println("File", r.FileUri)
-		fmt.Println("String Count", r.StringCount)
-		fmt.Println("Word Count", r.WordCount)
-		fmt.Println("Approved String Count", r.ApprovedStringCount)
+		fmt.Println("File                  ", r.FileUri)
+		fmt.Println("String Count          ", r.StringCount)
+		fmt.Println("Word Count            ", r.WordCount)
+		fmt.Println("Approved String Count ", r.ApprovedStringCount)
 		fmt.Println("Completed String Count", r.CompletedStringCount)
-		fmt.Println("Last Uploaded", r.LastUploaded)
-		fmt.Println("File Type", r.FileType)
+		fmt.Println("Last Uploaded         ", r.LastUploaded)
+		fmt.Println("File Type             ", r.FileType)
 	},
 }
 

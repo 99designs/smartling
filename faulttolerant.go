@@ -49,7 +49,7 @@ func (c *FaultTolerantClient) Get(req *GetRequest) (b []byte, err error) {
 	return
 }
 
-func (c *FaultTolerantClient) List(req ListRequest) (ff []File, err error) {
+func (c *FaultTolerantClient) List(req ListRequest) (ff []FileStatus, err error) {
 	c.execWithRetry(func() error {
 		ff, err = c.Client.List(req)
 		return err
@@ -57,7 +57,7 @@ func (c *FaultTolerantClient) List(req ListRequest) (ff []File, err error) {
 	return
 }
 
-func (c *FaultTolerantClient) Status(fileUri, locale string) (f File, err error) {
+func (c *FaultTolerantClient) Status(fileUri, locale string) (f FileStatus, err error) {
 	c.execWithRetry(func() error {
 		f, err = c.Client.Status(fileUri, locale)
 		return err

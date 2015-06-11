@@ -44,7 +44,7 @@ var projectStatusCommand = cli.Command{
 		panicIfErr(err)
 
 		var wg sync.WaitGroup
-		statuses := make(map[string]map[string]smartling.File)
+		statuses := make(map[string]map[string]smartling.FileStatus)
 
 		for _, projectFilepath := range projectFilepaths {
 			tmpfile, err := uploadAsTempFile(
@@ -59,15 +59,15 @@ var projectStatusCommand = cli.Command{
 				go func(tmpfile, locale, projectFilepath string) {
 					defer wg.Done()
 
-					file, err := client.Status(tmpfile, locale)
+					fs, err := client.Status(tmpfile, locale)
 					panicIfErr(err)
 
 					_, ok := statuses[projectFilepath]
 					if !ok {
-						mm := make(map[string]smartling.File)
+						mm := make(map[string]smartling.FileStatus)
 						statuses[projectFilepath] = mm
 					}
-					statuses[projectFilepath][locale] = file
+					statuses[projectFilepath][locale] = fs
 				}(tmpfile, l.Locale, projectFilepath)
 			}
 		}
@@ -90,9 +90,7 @@ var projectStatusCommand = cli.Command{
 			fmt.Fprint(w, projectFilepath)
 			for _, locale := range locales {
 				status := statuses[projectFilepath][locale.Locale]
-				awaitingAuth := status.StringCount - status.ApprovedStringCount
-				inProgress := status.StringCount - status.CompletedStringCount - awaitingAuth
-				fmt.Fprint(w, "\t", awaitingAuth, "->", inProgress, "->", status.CompletedStringCount)
+				fmt.Fprint(w, "\t", status.AwaitingAuthorizationCount(), "->", status.InProgressCount(), "->", status.CompletedStringCount)
 			}
 			fmt.Fprint(w, "\n")
 		}
@@ -138,10 +136,31 @@ var projectPullCommand = cli.Command{
 	},
 }
 
+func cleanPrefix(s string) string {
+	s = filepath.Clean("/" + s)
+	if s == "/" {
+		return ""
+	}
+	return s
+}
+
+func getPrefix(c *cli.Context) string {
+	prefix := c.String("prefix")
+	if prefix == "" {
+		prefix = pushPrefix()
+	}
+	prefix = cleanPrefix(prefix)
+
+	if prefix != "" {
+		fmt.Println("Using prefix", prefix)
+	}
+	return prefix
+}
+
 var projectPushCommand = cli.Command{
 	Name:        "push",
-	Usage:       "upload local project files, using the git branch or user name as a prefix",
-	Description: "push",
+	Usage:       "upload local project files with new strings, using the git branch or user name as a prefix",
+	Description: "push [prefix]",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "prefix",
@@ -149,12 +168,11 @@ var projectPushCommand = cli.Command{
 		},
 	},
 	Action: func(c *cli.Context) {
-		prefix := c.String("prefix")
-		if prefix == "" {
-			prefix = pushPrefix()
-		}
-		prefix = filepath.Clean("/" + prefix)
-		fmt.Println("Using prefix", prefix)
+		prefix := getPrefix(c)
+
+		locales, err := client.Locales()
+		panicIfErr(err)
+		firstLocale := locales[0].Locale
 
 		var wg sync.WaitGroup
 		for _, projectFilepath := range ProjectConfig.Files {
@@ -162,15 +180,31 @@ var projectPushCommand = cli.Command{
 			go func(projectFilepath string) {
 				defer wg.Done()
 
-				f := filepath.Clean(prefix + "/" + projectFilepath)
+				remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
 
-				fmt.Println("Uploading", f)
 				_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-					FileUri:      f,
+					FileUri:      remoteFile,
 					FileType:     filetypeForProjectFile(projectFilepath),
 					ParserConfig: ProjectConfig.FileConfig.ParserConfig,
 				})
 				panicIfErr(err)
+
+				fs, err := client.Status(remoteFile, firstLocale)
+				panicIfErr(err)
+
+				hasNewStrings := true
+				// when using a prefix, we only want to upload files with new strings
+				if prefix != "" {
+					if fs.AwaitingAuthorizationCount() == 0 {
+						err := client.Delete(remoteFile)
+						panicIfErr(err)
+						hasNewStrings = false
+					}
+				}
+				if hasNewStrings {
+					fmt.Printf("%3d unauthorised strings in %s\n", fs.AwaitingAuthorizationCount(), remoteFile)
+				}
+
 			}(projectFilepath)
 		}
 		wg.Wait()

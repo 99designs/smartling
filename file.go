@@ -160,7 +160,7 @@ type ListRequest struct {
 	OrderBy           string          `url:"orderBy,omitempty"`
 }
 
-type File struct {
+type FileStatus struct {
 	FileUri              string       `json:"fileUri"`
 	StringCount          int          `json:"stringCount"`
 	WordCount            int          `json:"wordCount"`
@@ -170,12 +170,20 @@ type File struct {
 	FileType             FileType     `json:"fileType"`
 }
 
-type ListResponse struct {
-	FileCount int    `json:"fileCount"`
-	Files     []File `json:"fileList"`
+func (fs *FileStatus) AwaitingAuthorizationCount() int {
+	return fs.StringCount - fs.ApprovedStringCount
 }
 
-func (c *Client) List(req ListRequest) ([]File, error) {
+func (fs *FileStatus) InProgressCount() int {
+	return fs.StringCount - fs.CompletedStringCount - fs.AwaitingAuthorizationCount()
+}
+
+type ListResponse struct {
+	FileCount int          `json:"fileCount"`
+	Files     []FileStatus `json:"fileList"`
+}
+
+func (c *Client) List(req ListRequest) ([]FileStatus, error) {
 	r := ListResponse{}
 	err := c.doRequestAndUnmarshalData("/file/list", req, &r)
 
@@ -187,9 +195,9 @@ type statusRequest struct {
 	Locale  string `url:"locale"`
 }
 
-func (c *Client) Status(fileUri, locale string) (File, error) {
+func (c *Client) Status(fileUri, locale string) (FileStatus, error) {
 	req := statusRequest{fileUri, locale}
-	r := File{}
+	r := FileStatus{}
 	err := c.doRequestAndUnmarshalData("/file/status", req, &r)
 
 	return r, err
