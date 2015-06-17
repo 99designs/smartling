@@ -103,7 +103,7 @@ func translateViaCache(locale, localpath string, filetype smartling.FileType, pa
 	// get cached file
 	if cacheFile, err := os.Open(cacheFilePath); err == nil {
 		if cfStat, err := cacheFile.Stat(); err == nil {
-			if time.Now().Sub(cfStat.ModTime()) < cacheMaxAge {
+			if time.Now().Sub(cfStat.ModTime()) < ProjectConfig.cacheMaxAge() {
 				if b, err = ioutil.ReadFile(cacheFilePath); err == nil {
 					return true, b, nil, ch // return the cached data
 				}

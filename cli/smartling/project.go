@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
-	"text/tabwriter"
 	"text/template"
 
 	"github.com/99designs/smartling"
@@ -27,6 +25,7 @@ var ProjectCommand = cli.Command{
 		return nil
 	},
 	Subcommands: []cli.Command{
+		projectFilesCommand,
 		projectStatusCommand,
 		projectPullCommand,
 		projectPushCommand,
@@ -56,10 +55,32 @@ func fetchLocales() []string {
 	return ll
 }
 
+var projectFilesCommand = cli.Command{
+	Name:        "files",
+	Usage:       "lists the local files",
+	Description: "files",
+	Action: func(c *cli.Context) {
+		if len(c.Args()) != 0 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: files")
+		}
+
+		for _, projectFilepath := range ProjectConfig.Files() {
+			fmt.Println(projectFilepath)
+		}
+	},
+}
+
 var projectStatusCommand = cli.Command{
 	Name:        "status",
 	Usage:       "show the status of the project's remote files",
 	Description: "status [<prefix>]",
+	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name:  "awaiting-auth",
+			Usage: "Output the number of strings Awaiting Authorization",
+		},
+	},
 	Action: func(c *cli.Context) {
 		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
@@ -67,64 +88,19 @@ var projectStatusCommand = cli.Command{
 		}
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
+		locales := fetchLocales()
+		statuses := GetProjectStatus(prefix, locales)
 
-		locales, err := client.Locales()
-		panicIfErr(err)
-
-		var wg sync.WaitGroup
-		statuses := make(map[string]map[string]smartling.FileStatus)
-
-		remoteFiles := fetchRemoteFileList()
-
-		for _, projectFilepath := range ProjectConfig.Files() {
-
-			prefixedProjectFilepath := filepath.Clean("/" + prefix + "/" + projectFilepath)
-			if !remoteFiles.contains(prefixedProjectFilepath) {
-				prefixedProjectFilepath = filepath.Clean("/" + projectFilepath)
-			}
-
-			for _, l := range locales {
-				wg.Add(1)
-				go func(remotefile, locale string) {
-					defer wg.Done()
-
-					fs, err := client.Status(remotefile, locale)
-					panicIfErr(err)
-
-					_, ok := statuses[remotefile]
-					if !ok {
-						mm := make(map[string]smartling.FileStatus)
-						statuses[remotefile] = mm
-					}
-					statuses[remotefile][locale] = fs
-				}(prefixedProjectFilepath, l.Locale)
-			}
-
+		if c.Bool("awaiting-auth") {
+			fmt.Println(statuses.AwaitingAuthorizationCount())
+		} else {
+			fmt.Print("\n")
+			PrintProjectStatusTable(statuses, locales)
+			fmt.Print("\n")
+			fmt.Printf("Awaiting Authorization: %4d\n", statuses.AwaitingAuthorizationCount())
+			fmt.Printf("Total:                  %4d\n", statuses.TotalStringsCount())
 		}
-		wg.Wait()
 
-		fmt.Print("\n")
-		fmt.Println("Translation counts: Awaiting Authorization -> In Progress -> Completed")
-		fmt.Print("\n")
-
-		// Format in columns
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-
-		fmt.Fprint(w, " ")
-		for _, locale := range locales {
-			fmt.Fprint(w, "\t", locale.Locale)
-		}
-		fmt.Fprint(w, "\n")
-
-		for projectFilepath, _ := range statuses {
-			fmt.Fprint(w, projectFilepath)
-			for _, locale := range locales {
-				status := statuses[projectFilepath][locale.Locale]
-				fmt.Fprint(w, "\t", status.AwaitingAuthorizationStringCount(), "->", status.InProgressStringCount(), "->", status.CompletedStringCount)
-			}
-			fmt.Fprint(w, "\n")
-		}
-		w.Flush()
 	},
 }
 
@@ -190,7 +166,7 @@ func prefixOrGitPrefix(prefix string) string {
 	prefix = cleanPrefix(prefix)
 
 	if prefix != "" {
-		fmt.Println("Using prefix", prefix)
+		log.Println("Using prefix", prefix)
 	}
 	return prefix
 }
@@ -233,7 +209,7 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 
 var projectPushCommand = cli.Command{
 	Name:  "push",
-	Usage: "upload local project files with new strings, using the git branch or user name as a prefix",
+	Usage: "upload local project files that contain untranslated strings",
 	Description: `push [<prefix>]
 Outputs the uploaded files for the given prefix
 `,

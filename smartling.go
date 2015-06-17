@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/google/go-querystring/query"
 )
@@ -45,12 +46,18 @@ func (c *Client) doRequestAndUnmarshalData(url string, req interface{}, res inte
 	return unmarshalResponseData(httpResponse, &res)
 }
 
+func httpClient() *http.Client {
+	return &http.Client{
+		Timeout: 20 * time.Second,
+	}
+}
+
 func NewClient(apiKey string, projectId string) *Client {
 	return &Client{
 		BaseUrl:    baseUrlProd,
 		ApiKey:     apiKey,
 		ProjectId:  projectId,
-		httpClient: http.DefaultClient,
+		httpClient: httpClient(),
 	}
 }
 
@@ -59,7 +66,7 @@ func NewSandboxClient(apiKey string, projectId string) *Client {
 		BaseUrl:    baseUrlSandbox,
 		ApiKey:     apiKey,
 		ProjectId:  projectId,
-		httpClient: http.DefaultClient,
+		httpClient: httpClient(),
 	}
 }
 

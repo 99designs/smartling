@@ -10,8 +10,11 @@ You can find documentation at http://godoc.org/github.com/99designs/smartling
 
 ```go
 import "github.com/99designs/smartling"
+
 client := smartling.NewClient(apiKey, projectId)
-client.List(smartling.ListRequest{})
+client.List(smartling.ListRequest{
+    Limit: 20,
+})
 ```
 
 ## CLI tool
@@ -40,9 +43,10 @@ When working in a dev environment, it is not desirable to be clobbering the Smar
 
 ```
 COMMANDS:
-   status   show the status of the project's remote files
-   pull     translate local project files using Smartling as a translation memory
-   push     upload local project files with new strings, using the git branch or user name as a prefix
+   files  lists the local files
+   status show the status of the project's remote files
+   pull   translate local project files using Smartling as a translation memory
+   push   upload local project files that contain untranslated strings
 ```
 
 Other cool features:
@@ -57,23 +61,17 @@ The CLI tool uses a project level config file called `smartling.yml` for configu
 
 Example config:
 ```yaml
+# Required config
 ApiKey: "11111111-2222-3333-4444-555555555555"             # Smartling API Key
 ProjectId: "666666666"                                     # Smartling Project Id
-
 Files:                                                     # Files in the project
   - translations/*.xlf                                     # Globbing can be used,
   - foo/bar.xlf                                            # as well as individual files
 
-FileConfig:                                                # Optional config for translation files
-  FileType: "xliff"                                        # Override the detected file type
-  ParserConfig:
-    placeholder_format_custom: "%[^%]+%"
-  PullFilePath: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}.{{.Ext}}" # The naming scheme when pulling files
+# Optional config
+CacheMaxAge: "4h"                                          # How long to cache translated files for
+FileType: "xliff"                                          # Override the detected file type
+ParserConfig:                                              # Add a custom configuration
+  placeholder_format_custom: "%[^%]+%"
+PullFilePath: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}" # The naming scheme when pulling files
 ```
-
-## TODO
- - docs
- - tests
- - make more things configurable
-  - cache maxage
-  - cache location

@@ -20,7 +20,6 @@ var ProjectConfig *Config
 var loadProjectErr error
 
 var defaultPullDestination = "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}"
-var cacheMaxAge = time.Duration(4 * time.Hour)
 
 type FileConfig struct {
 	FileType     smartling.FileType `yaml:"FileType"`
@@ -29,13 +28,14 @@ type FileConfig struct {
 }
 
 type Config struct {
-	path       string
-	ApiKey     string     `yaml:"ApiKey"`
-	ProjectId  string     `yaml:"ProjectId"`
-	FileGlobs  []string   `yaml:"Files"`
-	FileConfig FileConfig `yaml:"FileConfig"`
-	hasGlobbed bool
-	files      []string
+	path        string
+	ApiKey      string     `yaml:"ApiKey"`
+	ProjectId   string     `yaml:"ProjectId"`
+	CacheMaxAge string     `yaml:"CacheMaxAge"`
+	FileGlobs   []string   `yaml:"Files"`
+	FileConfig  FileConfig `yaml:"FileConfig"`
+	hasGlobbed  bool
+	files       []string
 }
 
 var ErrConfigFileNotExist = errors.New("smartling.yml not found")
@@ -52,6 +52,14 @@ func (c *Config) Files() []string {
 	return c.files
 }
 
+func (c *Config) cacheMaxAge() time.Duration {
+	if d, err := time.ParseDuration(c.CacheMaxAge); err != nil {
+		return d
+	}
+
+	return time.Duration(4 * time.Hour)
+}
+
 func gitBranch() string {
 	cmd := exec.Command("git", "symbolic-ref", "--short", "HEAD")
 	var out bytes.Buffer
@@ -62,22 +70,22 @@ func gitBranch() string {
 }
 
 func pushPrefix() string {
-	prefix := gitBranch()
-	if prefix == "master" {
+	// prefer branch
+	b := gitBranch()
+	if b == "master" {
 		return "/"
+	} else if b != "" {
+		return "/branch/" + b
 	}
 
-	if prefix == "" {
-		u, err := user.Current()
-		panicIfErr(err)
-		prefix = u.Username
-	}
-
-	if prefix == "" {
+	// fall back to username
+	u, err := user.Current()
+	panicIfErr(err)
+	if u.Username == "" {
 		log.Panicln("Can't find a prefix")
 	}
 
-	return prefix
+	return "/user/" + u.Username
 }
 
 func loadConfig(configfilepath string) (*Config, error) {

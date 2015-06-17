@@ -9,10 +9,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/google/go-querystring/query"
-	"github.com/joeshaw/iso8601"
 )
 
 type UploadRequest struct {
@@ -150,24 +148,25 @@ const (
 )
 
 type ListRequest struct {
-	Locale            string          `url:"locale,omitempty"`
-	UriMask           string          `url:"uriMask,omitempty"`
-	FileTypes         []FileType      `url:"fileTypes,omitempty"`
-	LastUploadedAfter time.Time       `url:"lastUploadedAfter,omitempty"`
-	Offset            int             `url:"offset,omitempty"`
-	Limit             int             `url:"limit,omitempty"`
-	Conditions        []ListCondition `url:"conditions,omitempty"`
-	OrderBy           string          `url:"orderBy,omitempty"`
+	Locale             string          `url:"locale,omitempty"`
+	UriMask            string          `url:"uriMask,omitempty"`
+	FileTypes          []FileType      `url:"fileTypes,omitempty"`
+	LastUploadedAfter  *Iso8601Time    `url:"lastUploadedAfter,omitempty"`
+	LastUploadedBefore *Iso8601Time    `url:"lastUploadedBefore,omitempty"`
+	Offset             int             `url:"offset,omitempty"`
+	Limit              int             `url:"limit,omitempty"`
+	Conditions         []ListCondition `url:"conditions,omitempty"`
+	OrderBy            string          `url:"orderBy,omitempty"`
 }
 
 type FileStatus struct {
-	FileUri              string       `json:"fileUri"`
-	StringCount          int          `json:"stringCount"`
-	WordCount            int          `json:"wordCount"`
-	ApprovedStringCount  int          `json:"approvedStringCount"`
-	CompletedStringCount int          `json:"completedStringCount"`
-	LastUploaded         iso8601.Time `json:"lastUploaded"`
-	FileType             FileType     `json:"fileType"`
+	FileUri              string      `json:"fileUri"`
+	StringCount          int         `json:"stringCount"`
+	WordCount            int         `json:"wordCount"`
+	ApprovedStringCount  int         `json:"approvedStringCount"`
+	CompletedStringCount int         `json:"completedStringCount"`
+	LastUploaded         Iso8601Time `json:"lastUploaded"`
+	FileType             FileType    `json:"fileType"`
 }
 
 func (fs FileStatus) AwaitingAuthorizationStringCount() int {
@@ -233,8 +232,8 @@ type LastModifiedRequest struct {
 }
 
 type LastModifiedItem struct {
-	Locale       string       `json:"locale"`
-	LastModified iso8601.Time `json:"lastModified"`
+	Locale       string      `json:"locale"`
+	LastModified Iso8601Time `json:"lastModified"`
 }
 
 type LastModifiedResponse struct {

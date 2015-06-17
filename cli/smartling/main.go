@@ -25,7 +25,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "smartling"
 	app.Usage = "manage translation files using Smartling"
-	app.Version = "0.1.0"
+	app.Version = "0.2.0"
 	app.Before = func(c *cli.Context) error {
 		apiKey := c.String("apikey")
 		projectId := c.String("projectid")
@@ -47,6 +47,13 @@ func main() {
 			if projectId == "" {
 				projectId = ProjectConfig.ProjectId
 			}
+		}
+
+		if apiKey == "" {
+			log.Fatalln("ApiKey not specified in --apikey or", configFile)
+		}
+		if projectId == "" {
+			log.Fatalln("ProjectId not specified in --projectid or", configFile)
 		}
 
 		var sc *smartling.Client

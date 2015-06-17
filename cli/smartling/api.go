@@ -11,25 +11,99 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-var LsCommand = cli.Command{
-	Name:  "ls",
-	Usage: "list remote files",
-	Action: func(c *cli.Context) {
-		if len(c.Args()) != 0 {
-			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: ls")
+func ListConditionSlice(cc []string) []smartling.ListCondition {
+	ll := []smartling.ListCondition{}
+	for _, c := range cc {
+		ll = append(ll, smartling.ListCondition(c))
+	}
+	return ll
+}
+
+func removeEmptyStrings(ss []string) []string {
+	newSs := []string{}
+	for _, s := range ss {
+		if s != "" {
+			newSs = append(newSs, s)
 		}
+	}
+	return newSs
+}
 
-		files, err := client.List(smartling.ListRequest{})
-		panicIfErr(err)
+func PrintList(uriMask string, olderThan time.Duration, long bool, conditions []string) {
+	req := smartling.ListRequest{
+		UriMask: uriMask,
+	}
+	conditions = removeEmptyStrings(conditions)
+	if len(conditions) > 0 {
+		fmt.Println("condittions", conditions, len(conditions))
+		req.Conditions = ListConditionSlice(conditions)
+	}
+	if olderThan > 0 {
+		t := smartling.Iso8601Time(time.Now().Add(-olderThan))
+		req.LastUploadedBefore = &t
+	}
 
+	files, err := client.List(req)
+	panicIfErr(err)
+
+	if long {
 		fmt.Println("total", len(files))
 		for _, f := range files {
-			t := time.Time(f.LastUploaded).Format("2 Jan 3:04")
+			t := time.Time(f.LastUploaded).Format("2 Jan 15:04")
 			fmt.Printf("%3d strings  %s  %s\n", f.StringCount, t, f.FileUri)
 		}
+	} else {
+		for _, f := range files {
+			fmt.Println(f.FileUri)
+		}
+	}
+}
 
+var LsCommand = cli.Command{
+	Name:        "ls",
+	Usage:       "list remote files",
+	Description: "ls [<uriMask>]",
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name: "conditions",
+		}, cli.StringFlag{
+			Name: "older-than",
+		}, cli.BoolFlag{
+			Name: "long,l",
+		},
 	},
+
+	Action: func(c *cli.Context) {
+		if len(c.Args()) > 1 {
+			log.Println("Wrong number of arguments")
+			log.Fatalln("Usage: ls [<uriMask>]")
+		}
+		uriMask := c.Args().Get(0)
+
+		var d time.Duration
+		if len(c.String("older-than")) > 0 {
+			var err error
+			d, err = time.ParseDuration(c.String("older-than"))
+			panicIfErr(err)
+		}
+
+		conditions := strings.Split(c.String("conditions"), ",")
+
+		PrintList(uriMask, d, c.Bool("long"), conditions)
+	},
+}
+
+func PrintFileStatus(remotepath, locale string) {
+	r, err := client.Status(remotepath, locale)
+	panicIfErr(err)
+
+	fmt.Println("File                  ", r.FileUri)
+	fmt.Println("String Count          ", r.StringCount)
+	fmt.Println("Word Count            ", r.WordCount)
+	fmt.Println("Approved String Count ", r.ApprovedStringCount)
+	fmt.Println("Completed String Count", r.CompletedStringCount)
+	fmt.Println("Last Uploaded         ", r.LastUploaded)
+	fmt.Println("File Type             ", r.FileType)
 }
 
 var StatusCommand = cli.Command{
@@ -45,16 +119,7 @@ var StatusCommand = cli.Command{
 		remotepath := c.Args().Get(0)
 		locale := c.Args().Get(1)
 
-		r, err := client.Status(remotepath, locale)
-		panicIfErr(err)
-
-		fmt.Println("File                  ", r.FileUri)
-		fmt.Println("String Count          ", r.StringCount)
-		fmt.Println("Word Count            ", r.WordCount)
-		fmt.Println("Approved String Count ", r.ApprovedStringCount)
-		fmt.Println("Completed String Count", r.CompletedStringCount)
-		fmt.Println("Last Uploaded         ", r.LastUploaded)
-		fmt.Println("File Type             ", r.FileType)
+		PrintFileStatus(remotepath, locale)
 	},
 }
 
