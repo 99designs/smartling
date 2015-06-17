@@ -133,7 +133,7 @@ var projectPullCommand = cli.Command{
 						locale,
 						localRelativeFilePath(projectFilepath),
 						filetypeForProjectFile(projectFilepath),
-						ProjectConfig.FileConfig.ParserConfig,
+						ProjectConfig.ParserConfig,
 					)
 					panicIfErr(err)
 
@@ -238,7 +238,7 @@ Outputs the uploaded files for the given prefix
 				_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
 					FileUri:      remoteFile,
 					FileType:     filetypeForProjectFile(projectFilepath),
-					ParserConfig: ProjectConfig.FileConfig.ParserConfig,
+					ParserConfig: ProjectConfig.ParserConfig,
 				})
 				panicIfErr(err)
 
@@ -261,7 +261,7 @@ Outputs the uploaded files for the given prefix
 func filetypeForProjectFile(projectFilepath string) smartling.FileType {
 	ft := smartling.FileTypeByExtension(filepath.Ext(projectFilepath))
 	if ft == "" {
-		ft = ProjectConfig.FileConfig.FileType
+		ft = ProjectConfig.FileType
 	}
 	if ft == "" {
 		log.Panicln("Can't determine file type for " + projectFilepath)
@@ -296,7 +296,7 @@ func localPullFilePath(p, locale string) string {
 
 	dt := defaultPullDestination
 	if dt != "" {
-		dt = ProjectConfig.FileConfig.PullFilePath
+		dt = ProjectConfig.PullFilePath
 	}
 
 	out := bytes.NewBufferString("")

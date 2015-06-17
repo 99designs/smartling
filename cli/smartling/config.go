@@ -21,21 +21,17 @@ var loadProjectErr error
 
 var defaultPullDestination = "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}"
 
-type FileConfig struct {
+type Config struct {
+	path         string
+	ApiKey       string             `yaml:"ApiKey"`
+	ProjectId    string             `yaml:"ProjectId"`
+	CacheMaxAge  string             `yaml:"CacheMaxAge"`
+	FileGlobs    []string           `yaml:"Files"`
 	FileType     smartling.FileType `yaml:"FileType"`
 	ParserConfig map[string]string  `yaml:"ParserConfig"`
 	PullFilePath string             `yaml:"PullFilePath"`
-}
-
-type Config struct {
-	path        string
-	ApiKey      string     `yaml:"ApiKey"`
-	ProjectId   string     `yaml:"ProjectId"`
-	CacheMaxAge string     `yaml:"CacheMaxAge"`
-	FileGlobs   []string   `yaml:"Files"`
-	FileConfig  FileConfig `yaml:"FileConfig"`
-	hasGlobbed  bool
-	files       []string
+	hasGlobbed   bool
+	files        []string
 }
 
 var ErrConfigFileNotExist = errors.New("smartling.yml not found")

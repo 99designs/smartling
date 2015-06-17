@@ -3,7 +3,13 @@ GOBUILD_ARGS := -ldflags "-X main.Version $(VERSION)"
 OS := $(shell go env GOOS)
 ARCH := $(shell go env GOHOSTARCH)
 
+# Release steps:
+#  git tag vx.x.x
+#  git push --tags
+#  make clean release
+
 release: bin/smartling-linux-amd64 bin/smartling
+	gzip bin/*
 
 bin/smartling-linux-amd64:
 	@mkdir -p bin
