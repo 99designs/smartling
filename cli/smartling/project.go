@@ -17,7 +17,12 @@ import (
 var ProjectCommand = cli.Command{
 	Name:  "project",
 	Usage: "manage local project files",
-	Before: func(c *cli.Context) (err error) {
+	Before: func(c *cli.Context) error {
+		err := cmdBefore(c)
+		if err != nil {
+			return nil
+		}
+
 		return loadProjectErr
 	},
 	After: func(c *cli.Context) error {

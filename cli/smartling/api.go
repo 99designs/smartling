@@ -72,7 +72,7 @@ var LsCommand = cli.Command{
 			Name: "long,l",
 		},
 	},
-
+	Before: cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
@@ -110,6 +110,7 @@ var StatusCommand = cli.Command{
 	Name:        "stat",
 	Usage:       "display the translation status of a remote file",
 	Description: "stat <remote file> <locale>",
+	Before:      cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 2 {
 			log.Println("Wrong number of arguments")
@@ -127,6 +128,7 @@ var GetCommand = cli.Command{
 	Name:        "get",
 	Usage:       "downloads a remote file",
 	Description: "get <remote file>",
+	Before:      cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 1 {
 			log.Println("Wrong number of arguments")
@@ -155,6 +157,7 @@ var PutCommand = cli.Command{
 			Name: "parserconfig",
 		},
 	},
+	Before: cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 2 {
 			log.Println("Wrong number of arguments")
@@ -192,6 +195,7 @@ var RenameCommand = cli.Command{
 	Name:        "rename",
 	Usage:       "renames a remote file",
 	Description: "rename <remote file> <new smartling file>",
+	Before:      cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 2 {
 			log.Println("Wrong number of arguments")
@@ -210,6 +214,7 @@ var RmCommand = cli.Command{
 	Name:        "rm",
 	Usage:       "removes a remote file",
 	Description: "rm <remote file>...",
+	Before:      cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) < 1 {
 			log.Println("Wrong number of arguments")
@@ -226,6 +231,7 @@ var LastmodifiedCommand = cli.Command{
 	Name:        "lastmodified",
 	Usage:       "shows when a remote file was modified last",
 	Description: "lastmodified <remote file>",
+	Before:      cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 1 {
 			log.Println("Wrong number of arguments")
@@ -247,8 +253,9 @@ var LastmodifiedCommand = cli.Command{
 }
 
 var LocalesCommand = cli.Command{
-	Name:  "locales",
-	Usage: "list the locales for the project",
+	Name:   "locales",
+	Usage:  "list the locales for the project",
+	Before: cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 0 {
 			log.Println("Wrong number of arguments")
