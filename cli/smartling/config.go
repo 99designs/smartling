@@ -70,9 +70,7 @@ func gitBranch() string {
 func pushPrefix() string {
 	// prefer branch
 	b := gitBranch()
-	if b == "master" {
-		return "/"
-	} else if b != "" {
+	if b != "" {
 		return "/branch/" + b
 	}
 

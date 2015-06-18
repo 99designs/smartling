@@ -164,8 +164,9 @@ func prefixOrGitPrefix(prefix string) string {
 	if prefix == "" {
 		prefix = pushPrefix()
 	}
-	if prefix == "master" {
-		prefix = ""
+
+	if prefix == "/branch/master" {
+		prefix = "/"
 	}
 
 	prefix = cleanPrefix(prefix)
