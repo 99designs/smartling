@@ -11,7 +11,7 @@ import (
 
 var client *smartling.FaultTolerantClient
 
-var Version string
+var Version = "dev"
 
 func init() {
 	log.SetFlags(0)
@@ -71,6 +71,13 @@ func main() {
 	app.Name = "smartling"
 	app.Usage = "manage translation files using Smartling"
 	app.Version = Version
+	app.Before = func(c *cli.Context) error {
+		if c.Bool("version") {
+			cli.VersionPrinter(c)
+			os.Exit(0)
+		}
+		return nil
+	}
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "apikey, k",
@@ -89,6 +96,7 @@ func main() {
 			Usage:  "Project config file to use",
 			EnvVar: "SMARTLING_CONFIGFILE",
 		},
+		cli.VersionFlag,
 	}
 	app.Commands = []cli.Command{
 		LsCommand,

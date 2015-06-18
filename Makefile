@@ -1,4 +1,6 @@
-VERSION := $(shell git tag --points-at=HEAD || git rev-parse --short HEAD)
+# the current tag else the current git sha
+VERSION := $(shell git tag --points-at=HEAD | grep . || git rev-parse --short HEAD)
+
 GOBUILD_ARGS := -ldflags "-X main.Version $(VERSION)"
 OS := $(shell go env GOOS)
 ARCH := $(shell go env GOHOSTARCH)
