@@ -1,6 +1,9 @@
 package smartling
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 func isResourceLockedError(err error) bool {
 	if err != nil {
@@ -11,20 +14,27 @@ func isResourceLockedError(err error) bool {
 	return false
 }
 
+func isNetworkErrClosing(err error) bool {
+	if err != nil {
+		return strings.Contains(err.Error(), "use of closed network connection")
+	}
+	return false
+}
+
 // FaultTolerantClient decorates a Client and retries
 // requests when Smartling returns with a Resource Locked error
 type FaultTolerantClient struct {
 	*Client
-	RetriesWhenResourceLocked int
+	RetriesOnError int
 }
 
 func (c *FaultTolerantClient) execWithRetry(f func() error) {
 	err := f()
 
-	retries := c.RetriesWhenResourceLocked
+	retries := c.RetriesOnError
 	backoff := 1 * time.Second
 
-	for isResourceLockedError(err) && retries > 0 {
+	for retries > 0 && (isResourceLockedError(err) || isNetworkErrClosing(err)) {
 		// log.Println("Resource locked, retrying")
 		time.Sleep(backoff)
 		f()
