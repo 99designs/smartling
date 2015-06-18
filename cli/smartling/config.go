@@ -49,7 +49,9 @@ func (c *Config) Files() []string {
 }
 
 func (c *Config) cacheMaxAge() time.Duration {
-	if d, err := time.ParseDuration(c.CacheMaxAge); err != nil {
+	if c.CacheMaxAge != "" {
+		d, err := time.ParseDuration(c.CacheMaxAge)
+		panicIfErr(err)
 		return d
 	}
 
