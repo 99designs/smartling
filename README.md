@@ -37,9 +37,13 @@ COMMANDS:
    project      manage local project files
 ```
 
-### The `project` command
+### The `smartling project` command
 
-When working in a dev environment, it is not desirable to be clobbering the Smartling project files. So these commands use temporary files and prefixes to allow "pushing" and "pulling" translations as required.
+The `smartling project` commands are designed for some common use-cases in a dev or CI environment.
+
+"Pulling" populates local files with translations from Smartling, without actually putting a new file into the project.
+
+"Pushing" uploads files to a smartling project using a prefix. By default it uses the git branch name, but you can also specifiy the wanted prefix as an argument.
 
 ```
 COMMANDS:
@@ -50,8 +54,8 @@ COMMANDS:
 ```
 
 Other cool features:
-- downloaded translation files are cached for 4 hours in `~/.smartling/cache`
-- things mostly happen concurrently
+- downloaded translation files are cached (default is 4 hours) in `~/.smartling/cache`
+- operations mostly happen concurrently
 - filetypes get detected automatically
 
 
