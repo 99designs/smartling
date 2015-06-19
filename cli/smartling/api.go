@@ -35,7 +35,6 @@ func PrintList(uriMask string, olderThan time.Duration, long bool, conditions []
 	}
 	conditions = removeEmptyStrings(conditions)
 	if len(conditions) > 0 {
-		fmt.Println("condittions", conditions, len(conditions))
 		req.Conditions = ListConditionSlice(conditions)
 	}
 	if olderThan > 0 {

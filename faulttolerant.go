@@ -1,6 +1,7 @@
 package smartling
 
 import (
+	"log"
 	"strings"
 	"time"
 )
@@ -29,15 +30,17 @@ type FaultTolerantClient struct {
 }
 
 func (c *FaultTolerantClient) execWithRetry(f func() error) {
-	err := f()
-
 	retries := c.RetriesOnError
 	backoff := 1 * time.Second
 
+	err := f()
+
 	for retries > 0 && (isResourceLockedError(err) || isNetworkErrClosing(err)) {
-		// log.Println("Resource locked, retrying")
+		log.Printf("%s, Retrying...\n", err.Error())
+
 		time.Sleep(backoff)
-		f()
+		err = f()
+
 		retries--
 		backoff = backoff * 2
 	}

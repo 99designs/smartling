@@ -48,7 +48,7 @@ func (c *Client) doRequestAndUnmarshalData(url string, req interface{}, res inte
 
 func httpClient() *http.Client {
 	return &http.Client{
-		Timeout: 20 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 }
 
