@@ -304,6 +304,9 @@ func localPullFilePath(p, locale string) string {
 	tmpl := template.New("name")
 	tmpl.Funcs(template.FuncMap{
 		"TrimSuffix": strings.TrimSuffix,
+		"Truncate": func(s string, n int) string {
+			return s[:n]
+		},
 	})
 	_, err := tmpl.Parse(dt)
 	panicIfErr(err)
