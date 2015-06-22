@@ -172,9 +172,14 @@ var PutCommand = cli.Command{
 		}
 
 		parserconfig := map[string]string{}
-		for _, q := range strings.Split(c.String("parserconfig"), ",") {
-			pc := strings.SplitN(q, "=", 2)
-			parserconfig[pc[0]] = pc[1]
+		if c.String("parserconfig") != "" {
+			parts := strings.Split(c.String("parserconfig"), ",")
+			if len(parts)%2 == 1 {
+				log.Fatalln("parserconfig must be in the format --parserconfig=key1,value1,key2,value2")
+			}
+			for i := 0; i < len(parts); i += 2 {
+				parserconfig[parts[i]] = parts[i+1]
+			}
 		}
 
 		r, err := client.Upload(localpath, &smartling.UploadRequest{
