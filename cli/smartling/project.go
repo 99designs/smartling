@@ -40,7 +40,7 @@ var ProjectCommand = cli.Command{
 func fetchRemoteFileList() stringSlice {
 	files := stringSlice{}
 	listFiles, err := client.List(smartling.ListRequest{})
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	for _, fs := range listFiles {
 		files = append(files, fs.FileUri)
@@ -52,7 +52,7 @@ func fetchRemoteFileList() stringSlice {
 func fetchLocales() []string {
 	ll := []string{}
 	locales, err := client.Locales()
-	panicIfErr(err)
+	logAndQuitIfError(err)
 	for _, l := range locales {
 		ll = append(ll, l.Locale)
 	}
@@ -120,7 +120,7 @@ var projectPullCommand = cli.Command{
 		}
 
 		locales, err := client.Locales()
-		panicIfErr(err)
+		logAndQuitIfError(err)
 
 		var wg sync.WaitGroup
 		for _, projectFilepath := range ProjectConfig.Files() {
@@ -135,7 +135,7 @@ var projectPullCommand = cli.Command{
 						filetypeForProjectFile(projectFilepath),
 						ProjectConfig.ParserConfig,
 					)
-					panicIfErr(err)
+					logAndQuitIfError(err)
 
 					fp := localPullFilePath(projectFilepath, locale)
 					cached := ""
@@ -144,7 +144,7 @@ var projectPullCommand = cli.Command{
 					}
 					fmt.Println(fp, cached)
 					err = ioutil.WriteFile(fp, b, 0644)
-					panicIfErr(err)
+					logAndQuitIfError(err)
 				}(l.Locale, projectFilepath)
 			}
 		}
@@ -203,7 +203,7 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 			defer wg.Done()
 
 			s, err := client.Status(f, l)
-			panicIfErr(err)
+			logAndQuitIfError(err)
 			ss.Statuses[l] = &s
 
 		}(remoteFilePath, locale)
@@ -241,7 +241,7 @@ Outputs the uploaded files for the given prefix
 					FileType:     filetypeForProjectFile(projectFilepath),
 					ParserConfig: ProjectConfig.ParserConfig,
 				})
-				panicIfErr(err)
+				logAndQuitIfError(err)
 
 				remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
 
@@ -249,7 +249,7 @@ Outputs the uploaded files for the given prefix
 				// completely translated content
 				if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
 					err := client.Delete(remoteFile)
-					panicIfErr(err)
+					logAndQuitIfError(err)
 				} else {
 					fmt.Println(remoteFile)
 				}
@@ -282,7 +282,7 @@ type FilenameParts struct {
 
 func localRelativeFilePath(remotepath string) string {
 	fp, err := filepath.Rel(".", filepath.Join(ProjectConfig.path, remotepath))
-	panicIfErr(err)
+	logAndQuitIfError(err)
 	return fp
 }
 
@@ -309,10 +309,10 @@ func localPullFilePath(p, locale string) string {
 		},
 	})
 	_, err := tmpl.Parse(dt)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	err = tmpl.Execute(out, parts)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	return localRelativeFilePath(out.String())
 }

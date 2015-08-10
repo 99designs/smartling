@@ -17,7 +17,7 @@ func init() {
 	log.SetFlags(0)
 }
 
-func panicIfErr(err error) {
+func logAndQuitIfError(err error) {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -111,5 +111,5 @@ func main() {
 	}
 
 	err := app.Run(os.Args)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 }

@@ -12,7 +12,7 @@ import (
 
 func MustStatus(remotefile, locale string) smartling.FileStatus {
 	fs, err := client.Status(remotefile, locale)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	return fs
 }
