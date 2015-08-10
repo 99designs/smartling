@@ -203,20 +203,12 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 		Statuses:       map[string]*smartling.FileStatus{},
 	}
 
-	// goroutine waits on a buffered channel for errors
-	// logs debugging info and quits on first error
-	errChan := make(chan errorWithSourceContext, 1)
-	go func() {
-		err := <-errChan
-		log.Fatalf("Error in %v:%v message: %v", err.SourceFile, err.SourceLine, err.Error())
-	}()
+	localesToProcess := len(locales)
+	errChan := make(chan errorWithSourceContext)
+	successChan := make(chan bool)
 
-	var wg sync.WaitGroup
 	for _, locale := range locales {
-		wg.Add(1)
 		go func(f, l string) {
-			defer wg.Done()
-
 			s, err := client.Status(f, l)
 			if err != nil {
 				ctxErr := errorWithSourceContext{
@@ -231,10 +223,22 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 				return
 			}
 			ss.Statuses[l] = &s
+			successChan <- true
 
 		}(remoteFilePath, locale)
 	}
-	wg.Wait()
+
+	for {
+		select {
+		case _ = <-successChan:
+			localesToProcess--
+		case err := <-errChan:
+			log.Fatalf("Error in %v:%v message: %v", err.SourceFile, err.SourceLine, err.Error())
+		}
+		if localesToProcess == 0 {
+			break
+		}
+	}
 
 	return ss
 }
