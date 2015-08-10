@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"text/template"
@@ -190,25 +191,54 @@ func (r *RemoteFileStatus) NotCompletedStringCount() int {
 	return c
 }
 
+type errorWithSourceContext struct {
+	error
+	SourceFile string
+	SourceLine int
+}
+
 func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileStatus {
 	ss := RemoteFileStatus{
 		RemoteFilePath: remoteFilePath,
 		Statuses:       map[string]*smartling.FileStatus{},
 	}
 
-	var wg sync.WaitGroup
-	for _, locale := range locales {
-		wg.Add(1)
-		go func(f, l string) {
-			defer wg.Done()
+	localesToProcess := len(locales)
+	errChan := make(chan errorWithSourceContext)
+	successChan := make(chan bool)
 
+	for _, locale := range locales {
+		go func(f, l string) {
 			s, err := client.Status(f, l)
-			panicIfErr(err)
+			if err != nil {
+				ctxErr := errorWithSourceContext{
+					error: err,
+				}
+				_, file, line, ok := runtime.Caller(1)
+				if ok {
+					ctxErr.SourceFile = file
+					ctxErr.SourceLine = line
+				}
+				errChan <- ctxErr
+				return
+			}
 			ss.Statuses[l] = &s
+			successChan <- true
 
 		}(remoteFilePath, locale)
 	}
-	wg.Wait()
+
+	for {
+		select {
+		case _ = <-successChan:
+			localesToProcess--
+		case err := <-errChan:
+			log.Fatalf("Error in %v:%v message: %v", err.SourceFile, err.SourceLine, err.Error())
+		}
+		if localesToProcess == 0 {
+			break
+		}
+	}
 
 	return ss
 }
