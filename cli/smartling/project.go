@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"text/template"
@@ -190,11 +191,25 @@ func (r *RemoteFileStatus) NotCompletedStringCount() int {
 	return c
 }
 
+type errorWithSourceContext struct {
+	error
+	SourceFile string
+	SourceLine int
+}
+
 func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileStatus {
 	ss := RemoteFileStatus{
 		RemoteFilePath: remoteFilePath,
 		Statuses:       map[string]*smartling.FileStatus{},
 	}
+
+	// goroutine waits on a buffered channel for errors
+	// logs debugging info and quits on first error
+	errChan := make(chan errorWithSourceContext, 1)
+	go func() {
+		err := <-errChan
+		log.Fatalf("Error in %v:%v message: %v", err.SourceFile, err.SourceLine, err.Error())
+	}()
 
 	var wg sync.WaitGroup
 	for _, locale := range locales {
@@ -203,7 +218,18 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 			defer wg.Done()
 
 			s, err := client.Status(f, l)
-			panicIfErr(err)
+			if err != nil {
+				ctxErr := errorWithSourceContext{
+					error: err,
+				}
+				_, file, line, ok := runtime.Caller(1)
+				if ok {
+					ctxErr.SourceFile = file
+					ctxErr.SourceLine = line
+				}
+				errChan <- ctxErr
+				return
+			}
 			ss.Statuses[l] = &s
 
 		}(remoteFilePath, locale)
