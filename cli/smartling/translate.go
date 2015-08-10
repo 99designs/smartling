@@ -81,15 +81,15 @@ func uploadAsTempFile(localpath string, filetype smartling.FileType, parserConfi
 
 func projectFileHash(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) string {
 	file, err := os.Open(localpath)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 	defer file.Close()
 
 	hash := sha1.New()
 	_, err = io.Copy(hash, file)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	_, err = hash.Write([]byte(fmt.Sprintf("%#v%#v%#v", locale, filetype, parserConfig)))
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	b := []byte{}
 	return hex.EncodeToString(hash.Sum(b))

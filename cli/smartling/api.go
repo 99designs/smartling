@@ -43,7 +43,7 @@ func PrintList(uriMask string, olderThan time.Duration, long bool, conditions []
 	}
 
 	files, err := client.List(req)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	if long {
 		fmt.Println("total", len(files))
@@ -83,7 +83,7 @@ var LsCommand = cli.Command{
 		if len(c.String("older-than")) > 0 {
 			var err error
 			d, err = time.ParseDuration(c.String("older-than"))
-			panicIfErr(err)
+			logAndQuitIfError(err)
 		}
 
 		conditions := strings.Split(c.String("conditions"), ",")
@@ -94,7 +94,7 @@ var LsCommand = cli.Command{
 
 func PrintFileStatus(remotepath, locale string) {
 	r, err := client.Status(remotepath, locale)
-	panicIfErr(err)
+	logAndQuitIfError(err)
 
 	fmt.Println("File                  ", r.FileUri)
 	fmt.Println("String Count          ", r.StringCount)
@@ -139,7 +139,7 @@ var GetCommand = cli.Command{
 		b, err := client.Get(&smartling.GetRequest{
 			FileUri: remotepath,
 		})
-		panicIfErr(err)
+		logAndQuitIfError(err)
 
 		fmt.Println(string(b))
 	},
@@ -187,7 +187,7 @@ var PutCommand = cli.Command{
 			FileType:     ft,
 			ParserConfig: parserconfig,
 		})
-		panicIfErr(err)
+		logAndQuitIfError(err)
 
 		fmt.Println("Overwritten: ", r.OverWritten)
 		fmt.Println("String Count:", r.StringCount)
@@ -210,7 +210,7 @@ var RenameCommand = cli.Command{
 		newremotepath := c.Args().Get(0)
 
 		err := client.Rename(remotepath, newremotepath)
-		panicIfErr(err)
+		logAndQuitIfError(err)
 	},
 }
 
@@ -226,7 +226,7 @@ var RmCommand = cli.Command{
 		}
 
 		for _, remotepath := range c.Args() {
-			panicIfErr(client.Delete(remotepath))
+			logAndQuitIfError(client.Delete(remotepath))
 		}
 	},
 }
@@ -247,7 +247,7 @@ var LastmodifiedCommand = cli.Command{
 		items, err := client.LastModified(smartling.LastModifiedRequest{
 			FileUri: remotepath,
 		})
-		panicIfErr(err)
+		logAndQuitIfError(err)
 
 		for _, i := range items {
 			t := time.Time(i.LastModified).Format("2 Jan 3:04")
@@ -267,7 +267,7 @@ var LocalesCommand = cli.Command{
 		}
 
 		r, err := client.Locales()
-		panicIfErr(err)
+		logAndQuitIfError(err)
 
 		for _, l := range r {
 			fmt.Printf("%-5s  %-23s  %s\n", l.Locale, l.Name, l.Translated)

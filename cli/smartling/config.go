@@ -40,7 +40,7 @@ func (c *Config) Files() []string {
 	if !c.hasGlobbed {
 		for _, g := range c.FileGlobs {
 			ff, err := filepath.Glob(g)
-			panicIfErr(err)
+			logAndQuitIfError(err)
 			c.files = append(c.files, ff...)
 		}
 	}
@@ -51,7 +51,7 @@ func (c *Config) Files() []string {
 func (c *Config) cacheMaxAge() time.Duration {
 	if c.CacheMaxAge != "" {
 		d, err := time.ParseDuration(c.CacheMaxAge)
-		panicIfErr(err)
+		logAndQuitIfError(err)
 		return d
 	}
 
@@ -76,7 +76,7 @@ func pushPrefix() string {
 
 	// fall back to username
 	u, err := user.Current()
-	panicIfErr(err)
+	logAndQuitIfError(err)
 	if u.Username == "" {
 		log.Panicln("Can't find a prefix")
 	}
