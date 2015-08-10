@@ -19,7 +19,7 @@ func init() {
 
 func panicIfErr(err error) {
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Fatalln(err.Error())
 	}
 }
 
@@ -61,7 +61,7 @@ var cmdBefore = func(c *cli.Context) error {
 		sc = smartling.NewClient(apiKey, projectId)
 	}
 
-	client = &smartling.FaultTolerantClient{sc, 4}
+	client = &smartling.FaultTolerantClient{sc, 10}
 
 	return nil
 }
