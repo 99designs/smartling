@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/99designs/smartling"
-	"github.com/codegangsta/cli"
+	"github.com/99designs/smartling/Godeps/_workspace/src/github.com/codegangsta/cli"
 )
 
 var client *smartling.FaultTolerantClient

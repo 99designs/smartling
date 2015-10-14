@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-querystring/query"
+	"github.com/99designs/smartling/Godeps/_workspace/src/github.com/google/go-querystring/query"
 )
 
 const (
