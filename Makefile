@@ -1,14 +1,15 @@
 # the current tag else the current git sha
 VERSION := $(shell git tag --points-at=HEAD | grep . || git rev-parse --short HEAD)
 
-GOBUILD_ARGS := -ldflags "-X main.Version $(VERSION)"
+GOBUILD_ARGS := -ldflags "-X main.Version=$(VERSION)"
 OS := $(shell go env GOOS)
 ARCH := $(shell go env GOHOSTARCH)
 
 # To create a new release:
 #  $ git tag vx.x.x
 #  $ git push --tags
-#  $ make clean release     # this will create 2 binaries in ./bin - darwin and linux
+#  $ make clean
+#  $ make release     # this will create 2 binaries in ./bin - darwin and linux
 #
 #  Next, go to https://github.com/99designs/smartling/releases/new
 #  - select the tag version you just created
