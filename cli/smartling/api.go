@@ -128,6 +128,11 @@ var GetCommand = cli.Command{
 	Usage:       "downloads a remote file",
 	Description: "get <remote file>",
 	Before:      cmdBefore,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name: "locale",
+		},
+	},
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 1 {
 			log.Println("Wrong number of arguments")
@@ -138,6 +143,7 @@ var GetCommand = cli.Command{
 
 		b, err := client.Get(&smartling.GetRequest{
 			FileUri: remotepath,
+			Locale:  c.String("locale"),
 		})
 		logAndQuitIfError(err)
 
