@@ -160,6 +160,8 @@ var PutCommand = cli.Command{
 			Name: "filetype",
 		}, cli.StringFlag{
 			Name: "parserconfig",
+		}, cli.BoolFlag{
+			Name: "approve",
 		},
 	},
 	Before: cmdBefore,
@@ -192,6 +194,7 @@ var PutCommand = cli.Command{
 			FileUri:      remotepath,
 			FileType:     ft,
 			ParserConfig: parserconfig,
+			Approved:     c.Bool("approve"),
 		})
 		logAndQuitIfError(err)
 
