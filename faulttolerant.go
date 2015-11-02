@@ -2,6 +2,7 @@ package smartling
 
 import (
 	"log"
+	"net"
 	"strings"
 	"time"
 )
@@ -22,8 +23,21 @@ func isNetworkErrClosing(err error) bool {
 	return false
 }
 
+func isTimeoutError(err error) bool {
+	if err != nil {
+		if netErr, ok := err.(net.Error); ok {
+			return netErr.Timeout()
+		}
+	}
+	return false
+}
+
+func isRetryableError(err error) bool {
+	return isResourceLockedError(err) || isNetworkErrClosing(err) || isTimeoutError(err)
+}
+
 // FaultTolerantClient decorates a Client and retries
-// requests when Smartling returns with a Resource Locked error
+// requests when Smartling returns with an error
 type FaultTolerantClient struct {
 	*Client
 	RetriesOnError int
@@ -35,7 +49,7 @@ func (c *FaultTolerantClient) execWithRetry(f func() error) {
 
 	err := f()
 
-	for retries > 0 && (isResourceLockedError(err) || isNetworkErrClosing(err)) {
+	for retries > 0 && isRetryableError(err) {
 		log.Printf("%s, Retrying...\n", err.Error())
 
 		time.Sleep(backoff)
