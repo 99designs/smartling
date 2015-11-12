@@ -228,35 +228,39 @@ Outputs the uploaded files for the given prefix
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
 		locales := fetchLocales()
 
-		var wg sync.WaitGroup
-		for _, projectFilepath := range ProjectConfig.Files() {
-			wg.Add(1)
-			go func(prefix, projectFilepath string) {
-				defer wg.Done()
-
-				remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
-
-				_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-					FileUri:      remoteFile,
-					FileType:     filetypeForProjectFile(projectFilepath),
-					ParserConfig: ProjectConfig.ParserConfig,
-				})
-				logAndQuitIfError(err)
-
-				remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
-
-				// when using a prefix, we don't want to see files with
-				// completely translated content
-				if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
-					err := client.Delete(remoteFile)
-					logAndQuitIfError(err)
-				} else {
-					fmt.Println(remoteFile)
-				}
-			}(prefix, projectFilepath)
-		}
-		wg.Wait()
+		push(prefix, locales)
 	},
+}
+
+func push(prefix string, locales []string) {
+	var wg sync.WaitGroup
+	for _, projectFilepath := range ProjectConfig.Files() {
+		wg.Add(1)
+		go func(prefix, projectFilepath string) {
+			defer wg.Done()
+
+			remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
+
+			_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
+				FileUri:      remoteFile,
+				FileType:     filetypeForProjectFile(projectFilepath),
+				ParserConfig: ProjectConfig.ParserConfig,
+			})
+			logAndQuitIfError(err)
+
+			remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
+
+			// when using a prefix, we don't want to see files with
+			// completely translated content
+			if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
+				err := client.Delete(remoteFile)
+				logAndQuitIfError(err)
+			} else {
+				fmt.Println(remoteFile)
+			}
+		}(prefix, projectFilepath)
+	}
+	wg.Wait()
 }
 
 func filetypeForProjectFile(projectFilepath string) smartling.FileType {
