@@ -227,11 +227,11 @@ Outputs the uploaded files for the given prefix
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
 
-		push(prefix)
+		pushProjectFiles(prefix)
 	},
 }
 
-func pushFile(projectFilepath string, prefix string, locales []string) {
+func pushFile(projectFilepath string, prefix string) {
 	remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
 
 	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
@@ -240,28 +240,15 @@ func pushFile(projectFilepath string, prefix string, locales []string) {
 		ParserConfig: ProjectConfig.ParserConfig,
 	})
 	logAndQuitIfError(err)
-
-	remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
-
-	// when using a prefix, we don't want to see files with
-	// completely translated content
-	if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
-		err := client.Delete(remoteFile)
-		logAndQuitIfError(err)
-	} else {
-		fmt.Println(remoteFile)
-	}
 }
 
-func push(prefix string) {
-	locales := fetchLocales()
-
+func pushProjectFiles(prefix string) {
 	var wg sync.WaitGroup
 	for _, projectFilepath := range ProjectConfig.Files() {
 		wg.Add(1)
 		go func(projectFilepath string) {
 			defer wg.Done()
-			pushFile(projectFilepath, prefix, locales)
+			pushFile(projectFilepath, prefix)
 		}(projectFilepath)
 	}
 	wg.Wait()
