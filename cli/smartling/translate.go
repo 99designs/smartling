@@ -117,7 +117,7 @@ func translateProjectFile(projectFilepath, locale string) (hit bool, b []byte, e
 	}
 
 	// translate
-	b, err = translateViaSmartling(locale, localpath, filetype, ProjectConfig.ParserConfig)
+	b, err = translateViaSmartling(localpath, locale, filetype, ProjectConfig.ParserConfig)
 	if err != nil {
 		return
 	}
@@ -145,7 +145,7 @@ func getCachedTranslations(cacheFilePath string) (hit bool, b []byte) {
 	return
 }
 
-func translateViaSmartling(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
+func translateViaSmartling(localpath, locale string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
 	tmppath, err := uploadAsTempFile(localpath, filetype, parserConfig)
 	if err != nil {
 		return
