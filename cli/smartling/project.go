@@ -233,7 +233,7 @@ Outputs the uploaded files for the given prefix
 func projectFileRemoteName(projectFilepath, prefix string) string {
 	remoteFile := projectFilepath
 	if prefix != "" {
-		remoteFile = fmt.Sprintf("%s/%s.%s", prefix, projectFilepath, projectFileHash(projectFilepath))
+		remoteFile = fmt.Sprintf("%s/%s/%s", prefix, projectFileHash(projectFilepath), projectFilepath)
 	}
 
 	return path.Clean(remoteFile)

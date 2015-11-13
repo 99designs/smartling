@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"text/tabwriter"
 
@@ -58,9 +57,9 @@ func GetProjectStatus(prefix string, locales []string) ProjectStatus {
 	remoteFiles := fetchRemoteFileList()
 
 	for _, projectFilepath := range ProjectConfig.Files() {
-		prefixedProjectFilepath := filepath.Clean("/" + prefix + "/" + projectFilepath)
-		if !remoteFiles.contains(prefixedProjectFilepath) {
-			prefixedProjectFilepath = filepath.Clean("/" + projectFilepath)
+		remoteFilePath := projectFileRemoteName(projectFilepath, prefix)
+		if !remoteFiles.contains(remoteFilePath) {
+			pushProjectFile(projectFilepath, prefix)
 		}
 
 		for _, l := range locales {
@@ -68,7 +67,7 @@ func GetProjectStatus(prefix string, locales []string) ProjectStatus {
 			go func(remotefile, locale string) {
 				defer wg.Done()
 				statuses.Add(remotefile, locale, MustStatus(remotefile, locale))
-			}(prefixedProjectFilepath, l)
+			}(remoteFilePath, l)
 		}
 	}
 	wg.Wait()

@@ -63,7 +63,9 @@ func hash(localpath string, filetype smartling.FileType, parserConfig map[string
 	logAndQuitIfError(err)
 
 	b := []byte{}
-	return hex.EncodeToString(hash.Sum(b))
+	h := hex.EncodeToString(hash.Sum(b))
+
+	return h[:7] // truncate to 7 chars
 }
 
 func translateProjectFile(projectFilepath, locale, prefix string) (hit bool, b []byte, err error, h string) {
