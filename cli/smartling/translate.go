@@ -59,7 +59,7 @@ func uploadAsTempFile(localpath string, filetype smartling.FileType, parserConfi
 	uploadMutex[localpath].Lock()
 	defer uploadMutex[localpath].Unlock()
 
-	tmppath := "/tmp/" + projectFileHash("", localpath, filetype, parserConfig)
+	tmppath := "/tmp/" + hash("", localpath, filetype, parserConfig)
 	if tempFilesUploaded.contains(tmppath) {
 		return tmppath, nil
 	}
@@ -79,7 +79,16 @@ func uploadAsTempFile(localpath string, filetype smartling.FileType, parserConfi
 	return tmppath, nil
 }
 
-func projectFileHash(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) string {
+func projectFileHash(projectFilepath string) string {
+	return hash(
+		"",
+		localRelativeFilePath(projectFilepath),
+		filetypeForProjectFile(projectFilepath),
+		ProjectConfig.ParserConfig,
+	)
+}
+
+func hash(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) string {
 	file, err := os.Open(localpath)
 	logAndQuitIfError(err)
 	defer file.Close()
@@ -97,7 +106,7 @@ func projectFileHash(locale, localpath string, filetype smartling.FileType, pars
 
 func translateViaCache(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (hit bool, b []byte, err error, ch string) {
 
-	ch = projectFileHash(locale, localpath, filetype, parserConfig)
+	ch = hash(locale, localpath, filetype, parserConfig)
 	cacheFilePath := filepath.Join(cachePath, ch)
 
 	// get cached file

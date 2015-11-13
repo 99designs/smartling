@@ -233,7 +233,8 @@ Outputs the uploaded files for the given prefix
 }
 
 func pushFile(projectFilepath string, prefix string) {
-	remoteFile := path.Clean(prefix + "/" + projectFilepath)
+	remoteFile := fmt.Sprintf("%s/%s.%s", prefix, projectFilepath, projectFileHash(projectFilepath))
+	remoteFile = path.Clean(remoteFile)
 
 	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
 		FileUri:      remoteFile,
