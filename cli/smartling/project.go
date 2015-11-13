@@ -226,9 +226,8 @@ Outputs the uploaded files for the given prefix
 		}
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
-		locales := fetchLocales()
 
-		push(prefix, locales)
+		push(prefix)
 	},
 }
 
@@ -254,14 +253,16 @@ func pushFile(projectFilepath string, prefix string, locales []string) {
 	}
 }
 
-func push(prefix string, locales []string) {
+func push(prefix string) {
+	locales := fetchLocales()
+
 	var wg sync.WaitGroup
 	for _, projectFilepath := range ProjectConfig.Files() {
 		wg.Add(1)
-		go func(prefix, projectFilepath string) {
+		go func(projectFilepath string) {
 			defer wg.Done()
 			pushFile(projectFilepath, prefix, locales)
-		}(prefix, projectFilepath)
+		}(projectFilepath)
 	}
 	wg.Wait()
 }
