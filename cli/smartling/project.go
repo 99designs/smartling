@@ -120,37 +120,45 @@ var projectPullCommand = cli.Command{
 			log.Fatalln("Usage: project pull")
 		}
 
-		locales, err := client.Locales()
-		logAndQuitIfError(err)
-
-		var wg sync.WaitGroup
-		for _, projectFilepath := range ProjectConfig.Files() {
-			for _, l := range locales {
-				wg.Add(1)
-				go func(locale, projectFilepath string) {
-					defer wg.Done()
-
-					hit, b, err, _ := translateViaCache(
-						locale,
-						localRelativeFilePath(projectFilepath),
-						filetypeForProjectFile(projectFilepath),
-						ProjectConfig.ParserConfig,
-					)
-					logAndQuitIfError(err)
-
-					fp := localPullFilePath(projectFilepath, locale)
-					cached := ""
-					if hit {
-						cached = "(using cache)"
-					}
-					fmt.Println(fp, cached)
-					err = ioutil.WriteFile(fp, b, 0644)
-					logAndQuitIfError(err)
-				}(l.Locale, projectFilepath)
-			}
-		}
-		wg.Wait()
+		pullProjectFiles()
 	},
+}
+
+func pullProjectFiles() {
+	locales, err := client.Locales()
+	logAndQuitIfError(err)
+
+	var wg sync.WaitGroup
+	for _, projectFilepath := range ProjectConfig.Files() {
+		for _, l := range locales {
+			wg.Add(1)
+			go func(locale, projectFilepath string) {
+				defer wg.Done()
+
+				pull(locale, projectFilepath)
+			}(l.Locale, projectFilepath)
+		}
+	}
+	wg.Wait()
+}
+
+func pull(locale, projectFilepath string) {
+	hit, b, err, _ := translateViaCache(
+		locale,
+		localRelativeFilePath(projectFilepath),
+		filetypeForProjectFile(projectFilepath),
+		ProjectConfig.ParserConfig,
+	)
+	logAndQuitIfError(err)
+
+	fp := localPullFilePath(projectFilepath, locale)
+	cached := ""
+	if hit {
+		cached = "(using cache)"
+	}
+	fmt.Println(fp, cached)
+	err = ioutil.WriteFile(fp, b, 0644)
+	logAndQuitIfError(err)
 }
 
 func cleanPrefix(s string) string {
