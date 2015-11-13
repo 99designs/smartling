@@ -167,10 +167,6 @@ func prefixOrGitPrefix(prefix string) string {
 		prefix = pushPrefix()
 	}
 
-	if prefix == "/branch/master" {
-		prefix = "/"
-	}
-
 	prefix = cleanPrefix(prefix)
 
 	if prefix != "" {
@@ -233,11 +229,14 @@ Outputs the uploaded files for the given prefix
 	},
 }
 
+// if prefix is empty, don't append the hash also
 func projectFileRemoteName(projectFilepath, prefix string) string {
-	remoteFile := fmt.Sprintf("%s/%s.%s", prefix, projectFilepath, projectFileHash(projectFilepath))
-	remoteFile = path.Clean(remoteFile)
+	remoteFile := projectFilepath
+	if prefix != "" {
+		remoteFile = fmt.Sprintf("%s/%s.%s", prefix, projectFilepath, projectFileHash(projectFilepath))
+	}
 
-	return remoteFile
+	return path.Clean(remoteFile)
 }
 
 func pushProjectFile(projectFilepath, prefix string) string {
