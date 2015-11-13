@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -153,7 +154,7 @@ var projectPullCommand = cli.Command{
 }
 
 func cleanPrefix(s string) string {
-	s = filepath.Clean("/" + s)
+	s = path.Clean("/" + s)
 	if s == "/" {
 		return ""
 	}
@@ -232,7 +233,7 @@ Outputs the uploaded files for the given prefix
 }
 
 func pushFile(projectFilepath string, prefix string) {
-	remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
+	remoteFile := path.Clean(prefix + "/" + projectFilepath)
 
 	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
 		FileUri:      remoteFile,
@@ -255,7 +256,7 @@ func pushProjectFiles(prefix string) {
 }
 
 func filetypeForProjectFile(projectFilepath string) smartling.FileType {
-	ft := smartling.FileTypeByExtension(filepath.Ext(projectFilepath))
+	ft := smartling.FileTypeByExtension(path.Ext(projectFilepath))
 	if ft == "" {
 		ft = ProjectConfig.FileType
 	}
@@ -276,7 +277,7 @@ type FilenameParts struct {
 }
 
 func localRelativeFilePath(remotepath string) string {
-	fp, err := filepath.Rel(".", filepath.Join(ProjectConfig.path, remotepath))
+	fp, err := filepath.Rel(".", path.Join(ProjectConfig.path, remotepath))
 	logAndQuitIfError(err)
 	return fp
 }
@@ -284,9 +285,9 @@ func localRelativeFilePath(remotepath string) string {
 func localPullFilePath(p, locale string) string {
 	parts := FilenameParts{
 		Path:   p,
-		Dir:    filepath.Dir(p),
-		Base:   filepath.Base(p),
-		Ext:    filepath.Ext(p),
+		Dir:    path.Dir(p),
+		Base:   path.Base(p),
+		Ext:    path.Ext(p),
 		Locale: locale,
 	}
 
