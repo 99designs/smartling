@@ -120,7 +120,7 @@ func translateViaSmartling(projectFilepath, prefix, locale string) (b []byte, er
 		Locale:  locale,
 	})
 
-	fmt.Println("Pulled", remotePath)
+	fmt.Println("Downloaded", remotePath)
 
 	return
 }

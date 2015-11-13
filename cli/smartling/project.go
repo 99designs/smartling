@@ -137,6 +137,9 @@ func pullAllProjectFiles(prefix string) {
 	locales, err := client.Locales()
 	logAndQuitIfError(err)
 
+	// do this first to cache result and prevent races in the goroutines
+	_ = getRemoteFileList()
+
 	var wg sync.WaitGroup
 	for _, projectFilepath := range ProjectConfig.Files() {
 		for _, l := range locales {
@@ -260,7 +263,7 @@ func pushProjectFile(projectFilepath, prefix string) string {
 	})
 	logAndQuitIfError(err)
 
-	fmt.Println("Pushed", remoteFile)
+	fmt.Println("Uploaded", remoteFile)
 	return remoteFile
 }
 
