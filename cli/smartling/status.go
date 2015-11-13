@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"text/tabwriter"
 
@@ -55,20 +54,16 @@ func (statuses ProjectStatus) TotalStringsCount() int {
 func GetProjectStatus(prefix string, locales []string) ProjectStatus {
 	var wg sync.WaitGroup
 	statuses := ProjectStatus{}
-	remoteFiles := fetchRemoteFileList()
 
 	for _, projectFilepath := range ProjectConfig.Files() {
-		prefixedProjectFilepath := filepath.Clean("/" + prefix + "/" + projectFilepath)
-		if !remoteFiles.contains(prefixedProjectFilepath) {
-			prefixedProjectFilepath = filepath.Clean("/" + projectFilepath)
-		}
+		remoteFilePath := findIdenticalRemoteFileOrPush(projectFilepath, prefix)
 
 		for _, l := range locales {
 			wg.Add(1)
 			go func(remotefile, locale string) {
 				defer wg.Done()
 				statuses.Add(remotefile, locale, MustStatus(remotefile, locale))
-			}(prefixedProjectFilepath, l)
+			}(remoteFilePath, l)
 		}
 	}
 	wg.Wait()

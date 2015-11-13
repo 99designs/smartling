@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -24,10 +25,6 @@ var ProjectCommand = cli.Command{
 		}
 
 		return loadProjectErr
-	},
-	After: func(c *cli.Context) error {
-		cleanupTempFiles()
-		return nil
 	},
 	Subcommands: []cli.Command{
 		projectFilesCommand,
@@ -110,50 +107,55 @@ var projectStatusCommand = cli.Command{
 }
 
 var projectPullCommand = cli.Command{
-	Name:  "pull",
-	Usage: "translate local project files using Smartling as a translation memory",
-
+	Name:        "pull",
+	Usage:       "translate local project files using Smartling as a translation memory",
+	Description: "pull [<prefix>]",
 	Action: func(c *cli.Context) {
-		if len(c.Args()) != 0 {
+		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: project pull")
+			log.Fatalln("Usage: pull [<prefix>]")
 		}
 
-		locales, err := client.Locales()
-		logAndQuitIfError(err)
+		prefix := prefixOrGitPrefix(c.Args().Get(0))
 
-		var wg sync.WaitGroup
-		for _, projectFilepath := range ProjectConfig.Files() {
-			for _, l := range locales {
-				wg.Add(1)
-				go func(locale, projectFilepath string) {
-					defer wg.Done()
-
-					hit, b, err, _ := translateViaCache(
-						locale,
-						localRelativeFilePath(projectFilepath),
-						filetypeForProjectFile(projectFilepath),
-						ProjectConfig.ParserConfig,
-					)
-					logAndQuitIfError(err)
-
-					fp := localPullFilePath(projectFilepath, locale)
-					cached := ""
-					if hit {
-						cached = "(using cache)"
-					}
-					fmt.Println(fp, cached)
-					err = ioutil.WriteFile(fp, b, 0644)
-					logAndQuitIfError(err)
-				}(l.Locale, projectFilepath)
-			}
-		}
-		wg.Wait()
+		pullAllProjectFiles(prefix)
 	},
 }
 
+func pullAllProjectFiles(prefix string) {
+	locales, err := client.Locales()
+	logAndQuitIfError(err)
+
+	var wg sync.WaitGroup
+	for _, projectFilepath := range ProjectConfig.Files() {
+		for _, l := range locales {
+			wg.Add(1)
+			go func(locale, projectFilepath string) {
+				defer wg.Done()
+
+				pullProjectFile(projectFilepath, locale, prefix)
+			}(l.Locale, projectFilepath)
+		}
+	}
+	wg.Wait()
+}
+
+func pullProjectFile(projectFilepath, locale, prefix string) {
+	hit, b, err := translateProjectFile(projectFilepath, locale, prefix)
+	logAndQuitIfError(err)
+
+	fp := localPullFilePath(projectFilepath, locale)
+	cached := ""
+	if hit {
+		cached = "(from cache)"
+	}
+	fmt.Println("Pulled", fp, cached)
+	err = ioutil.WriteFile(fp, b, 0644)
+	logAndQuitIfError(err)
+}
+
 func cleanPrefix(s string) string {
-	s = filepath.Clean("/" + s)
+	s = path.Clean("/" + s)
 	if s == "/" {
 		return ""
 	}
@@ -163,10 +165,6 @@ func cleanPrefix(s string) string {
 func prefixOrGitPrefix(prefix string) string {
 	if prefix == "" {
 		prefix = pushPrefix()
-	}
-
-	if prefix == "/branch/master" {
-		prefix = "/"
 	}
 
 	prefix = cleanPrefix(prefix)
@@ -226,41 +224,49 @@ Outputs the uploaded files for the given prefix
 		}
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
-		locales := fetchLocales()
 
-		var wg sync.WaitGroup
-		for _, projectFilepath := range ProjectConfig.Files() {
-			wg.Add(1)
-			go func(prefix, projectFilepath string) {
-				defer wg.Done()
-
-				remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
-
-				_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-					FileUri:      remoteFile,
-					FileType:     filetypeForProjectFile(projectFilepath),
-					ParserConfig: ProjectConfig.ParserConfig,
-				})
-				logAndQuitIfError(err)
-
-				remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
-
-				// when using a prefix, we don't want to see files with
-				// completely translated content
-				if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
-					err := client.Delete(remoteFile)
-					logAndQuitIfError(err)
-				} else {
-					fmt.Println(remoteFile)
-				}
-			}(prefix, projectFilepath)
-		}
-		wg.Wait()
+		pushAllProjectFiles(prefix)
 	},
 }
 
+// if prefix is empty, don't append the hash also
+func projectFileRemoteName(projectFilepath, prefix string) string {
+	remoteFile := projectFilepath
+	if prefix != "" {
+		remoteFile = fmt.Sprintf("%s/%s/%s", prefix, projectFileHash(projectFilepath), projectFilepath)
+	}
+
+	return path.Clean(remoteFile)
+}
+
+func pushProjectFile(projectFilepath, prefix string) string {
+	remoteFile := projectFileRemoteName(projectFilepath, prefix)
+
+	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
+		FileUri:      remoteFile,
+		FileType:     filetypeForProjectFile(projectFilepath),
+		ParserConfig: ProjectConfig.ParserConfig,
+	})
+	logAndQuitIfError(err)
+
+	fmt.Println("Pushed", remoteFile)
+	return remoteFile
+}
+
+func pushAllProjectFiles(prefix string) {
+	var wg sync.WaitGroup
+	for _, projectFilepath := range ProjectConfig.Files() {
+		wg.Add(1)
+		go func(projectFilepath string) {
+			defer wg.Done()
+			_ = pushProjectFile(projectFilepath, prefix)
+		}(projectFilepath)
+	}
+	wg.Wait()
+}
+
 func filetypeForProjectFile(projectFilepath string) smartling.FileType {
-	ft := smartling.FileTypeByExtension(filepath.Ext(projectFilepath))
+	ft := smartling.FileTypeByExtension(path.Ext(projectFilepath))
 	if ft == "" {
 		ft = ProjectConfig.FileType
 	}
@@ -281,7 +287,7 @@ type FilenameParts struct {
 }
 
 func localRelativeFilePath(remotepath string) string {
-	fp, err := filepath.Rel(".", filepath.Join(ProjectConfig.path, remotepath))
+	fp, err := filepath.Rel(".", path.Join(ProjectConfig.path, remotepath))
 	logAndQuitIfError(err)
 	return fp
 }
@@ -289,9 +295,9 @@ func localRelativeFilePath(remotepath string) string {
 func localPullFilePath(p, locale string) string {
 	parts := FilenameParts{
 		Path:   p,
-		Dir:    filepath.Dir(p),
-		Base:   filepath.Base(p),
-		Ext:    filepath.Ext(p),
+		Dir:    path.Dir(p),
+		Base:   path.Base(p),
+		Ext:    path.Ext(p),
 		Locale: locale,
 	}
 
