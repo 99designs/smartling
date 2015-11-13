@@ -63,20 +63,20 @@ func projectFileHash(projectFilepath string) string {
 	return h[:7] // truncate to 7 chars
 }
 
-func translateProjectFile(projectFilepath, locale, prefix string) (hit bool, b []byte, err error, h string) {
-	filetype := filetypeForProjectFile(projectFilepath)
-	h = projectFileHash(projectFilepath)
+func translateProjectFile(projectFilepath, locale, prefix string) (hit bool, b []byte, err error) {
 
-	cacheFilePath := filepath.Join(cachePath, fmt.Sprintf("%s.%s", h, locale))
+	hash := projectFileHash(projectFilepath)
+
+	cacheFilePath := filepath.Join(cachePath, fmt.Sprintf("%s.%s", hash, locale))
 
 	// check cache
 	hit, b = getCachedTranslations(cacheFilePath)
 	if hit {
-		return hit, b, nil, h
+		return hit, b, nil
 	}
 
 	// translate
-	b, err = translateViaSmartling(projectFilepath, locale, prefix, filetype, ProjectConfig.ParserConfig)
+	b, err = translateViaSmartling(projectFilepath, prefix, locale)
 	if err != nil {
 		return
 	}
@@ -116,7 +116,7 @@ func findIdenticalRemoteFileOrPush(projectFilepath, prefix string) string {
 
 	for _, f := range allRemoteFiles {
 		if f == remoteFile {
-			// file already exists remotely
+			// exact file already exists remotely
 			return f
 		}
 	}
@@ -131,7 +131,7 @@ func findIdenticalRemoteFileOrPush(projectFilepath, prefix string) string {
 	return pushProjectFile(projectFilepath, prefix)
 }
 
-func translateViaSmartling(projectFilepath, locale, prefix string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
+func translateViaSmartling(projectFilepath, prefix, locale string) (b []byte, err error) {
 	remotePath := findIdenticalRemoteFileOrPush(projectFilepath, prefix)
 
 	b, err = client.Get(&smartling.GetRequest{

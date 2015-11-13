@@ -141,7 +141,7 @@ func pullAllProjectFiles(prefix string) {
 }
 
 func pullProjectFile(projectFilepath, locale, prefix string) {
-	hit, b, err, _ := translateProjectFile(projectFilepath, locale, prefix)
+	hit, b, err := translateProjectFile(projectFilepath, locale, prefix)
 	logAndQuitIfError(err)
 
 	fp := localPullFilePath(projectFilepath, locale)
