@@ -26,10 +26,6 @@ var ProjectCommand = cli.Command{
 
 		return loadProjectErr
 	},
-	After: func(c *cli.Context) error {
-		cleanupTempFiles()
-		return nil
-	},
 	Subcommands: []cli.Command{
 		projectFilesCommand,
 		projectStatusCommand,
@@ -115,16 +111,18 @@ var projectPullCommand = cli.Command{
 	Usage: "translate local project files using Smartling as a translation memory",
 
 	Action: func(c *cli.Context) {
-		if len(c.Args()) != 0 {
+		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: project pull")
+			log.Fatalln("Usage: status [<prefix>]")
 		}
 
-		pullProjectFiles()
+		prefix := prefixOrGitPrefix(c.Args().Get(0))
+
+		pullAllProjectFiles(prefix)
 	},
 }
 
-func pullProjectFiles() {
+func pullAllProjectFiles(prefix string) {
 	locales, err := client.Locales()
 	logAndQuitIfError(err)
 
@@ -135,15 +133,15 @@ func pullProjectFiles() {
 			go func(locale, projectFilepath string) {
 				defer wg.Done()
 
-				pull(locale, projectFilepath)
+				pullProjectFile(projectFilepath, locale, prefix)
 			}(l.Locale, projectFilepath)
 		}
 	}
 	wg.Wait()
 }
 
-func pull(locale, projectFilepath string) {
-	hit, b, err, _ := translateProjectFile(projectFilepath, locale)
+func pullProjectFile(projectFilepath, locale, prefix string) {
+	hit, b, err, _ := translateProjectFile(projectFilepath, locale, prefix)
 	logAndQuitIfError(err)
 
 	fp := localPullFilePath(projectFilepath, locale)
@@ -231,13 +229,19 @@ Outputs the uploaded files for the given prefix
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
 
-		pushProjectFiles(prefix)
+		pushAllProjectFiles(prefix)
 	},
 }
 
-func pushFile(projectFilepath string, prefix string) {
+func projectFileRemoteName(projectFilepath, prefix string) string {
 	remoteFile := fmt.Sprintf("%s/%s.%s", prefix, projectFilepath, projectFileHash(projectFilepath))
 	remoteFile = path.Clean(remoteFile)
+
+	return remoteFile
+}
+
+func pushProjectFile(projectFilepath, prefix string) string {
+	remoteFile := projectFileRemoteName(projectFilepath, prefix)
 
 	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
 		FileUri:      remoteFile,
@@ -245,15 +249,18 @@ func pushFile(projectFilepath string, prefix string) {
 		ParserConfig: ProjectConfig.ParserConfig,
 	})
 	logAndQuitIfError(err)
+
+	fmt.Println("Pushed", remoteFile)
+	return remoteFile
 }
 
-func pushProjectFiles(prefix string) {
+func pushAllProjectFiles(prefix string) {
 	var wg sync.WaitGroup
 	for _, projectFilepath := range ProjectConfig.Files() {
 		wg.Add(1)
 		go func(projectFilepath string) {
 			defer wg.Done()
-			pushFile(projectFilepath, prefix)
+			_ = pushProjectFile(projectFilepath, prefix)
 		}(projectFilepath)
 	}
 	wg.Wait()

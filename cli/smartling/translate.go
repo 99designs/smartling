@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.com/99designs/smartling"
@@ -43,42 +42,6 @@ func (ss stringSlice) contains(s string) bool {
 	return false
 }
 
-// only let 1 file upload at once to avoid clobbering
-var tempFilesUploaded = stringSlice{}
-var uploadMutex = map[string]*sync.Mutex{}
-var mapMutex sync.Mutex
-
-func uploadAsTempFile(localpath string, filetype smartling.FileType, parserConfig map[string]string) (remotepath string, err error) {
-
-	mapMutex.Lock()
-	if _, ok := uploadMutex[localpath]; !ok {
-		uploadMutex[localpath] = &sync.Mutex{}
-	}
-	mapMutex.Unlock()
-
-	uploadMutex[localpath].Lock()
-	defer uploadMutex[localpath].Unlock()
-
-	tmppath := "/tmp/" + hash(localpath, filetype, parserConfig)
-	if tempFilesUploaded.contains(tmppath) {
-		return tmppath, nil
-	}
-
-	// upload
-	_, err = client.Upload(localpath, &smartling.UploadRequest{
-		FileUri:      tmppath,
-		FileType:     filetype,
-		ParserConfig: parserConfig,
-	})
-	if err != nil {
-		return
-	}
-
-	tempFilesUploaded = append(tempFilesUploaded, tmppath)
-
-	return tmppath, nil
-}
-
 func projectFileHash(projectFilepath string) string {
 	return hash(
 		localRelativeFilePath(projectFilepath),
@@ -103,7 +66,7 @@ func hash(localpath string, filetype smartling.FileType, parserConfig map[string
 	return hex.EncodeToString(hash.Sum(b))
 }
 
-func translateProjectFile(projectFilepath, locale string) (hit bool, b []byte, err error, h string) {
+func translateProjectFile(projectFilepath, locale, prefix string) (hit bool, b []byte, err error, h string) {
 	localpath := localRelativeFilePath(projectFilepath)
 	filetype := filetypeForProjectFile(projectFilepath)
 
@@ -117,7 +80,7 @@ func translateProjectFile(projectFilepath, locale string) (hit bool, b []byte, e
 	}
 
 	// translate
-	b, err = translateViaSmartling(localpath, locale, filetype, ProjectConfig.ParserConfig)
+	b, err = translateViaSmartling(projectFilepath, locale, prefix, filetype, ProjectConfig.ParserConfig)
 	if err != nil {
 		return
 	}
@@ -145,31 +108,24 @@ func getCachedTranslations(cacheFilePath string) (hit bool, b []byte) {
 	return
 }
 
-func translateViaSmartling(localpath, locale string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
-	tmppath, err := uploadAsTempFile(localpath, filetype, parserConfig)
-	if err != nil {
-		return
-	}
+func translateViaSmartling(projectFilepath, locale, prefix string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
+	remotePath := projectFileRemoteName(projectFilepath, prefix)
 
 	b, err = client.Get(&smartling.GetRequest{
-		FileUri: tmppath,
+		FileUri: remotePath,
 		Locale:  locale,
 	})
 
-	return
-}
+	// file might not exist, try pushing first
+	if err != nil {
 
-func cleanupTempFiles() {
-	var wg sync.WaitGroup
-	for _, f := range tempFilesUploaded {
-		wg.Add(1)
-		go func(f string) {
-			defer wg.Done()
-			err := client.Delete(f)
-			if err != nil {
-				log.Println(err.Error())
-			}
-		}(f)
+		remotePath := pushProjectFile(projectFilepath, prefix)
+
+		b, err = client.Get(&smartling.GetRequest{
+			FileUri: remotePath,
+			Locale:  locale,
+		})
 	}
-	wg.Wait()
+
+	return
 }
