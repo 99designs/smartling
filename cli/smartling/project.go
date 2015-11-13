@@ -143,12 +143,7 @@ func pullProjectFiles() {
 }
 
 func pull(locale, projectFilepath string) {
-	hit, b, err, _ := translate(
-		locale,
-		localRelativeFilePath(projectFilepath),
-		filetypeForProjectFile(projectFilepath),
-		ProjectConfig.ParserConfig,
-	)
+	hit, b, err, _ := translateProjectFile(projectFilepath, locale)
 	logAndQuitIfError(err)
 
 	fp := localPullFilePath(projectFilepath, locale)

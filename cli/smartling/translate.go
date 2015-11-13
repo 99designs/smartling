@@ -104,8 +104,12 @@ func hash(locale, localpath string, filetype smartling.FileType, parserConfig ma
 	return hex.EncodeToString(hash.Sum(b))
 }
 
-func translate(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (hit bool, b []byte, err error, h string) {
-	h = hash(locale, localpath, filetype, parserConfig)
+func translateProjectFile(projectFilepath, locale string) (hit bool, b []byte, err error, h string) {
+
+	localpath := localRelativeFilePath(projectFilepath)
+	filetype := filetypeForProjectFile(projectFilepath)
+
+	h = hash(locale, localpath, filetype, ProjectConfig.ParserConfig)
 	cacheFilePath := filepath.Join(cachePath, h)
 
 	// check cache
@@ -115,7 +119,7 @@ func translate(locale, localpath string, filetype smartling.FileType, parserConf
 	}
 
 	// translate
-	b, err = translateViaSmartling(locale, localpath, filetype, parserConfig)
+	b, err = translateViaSmartling(locale, localpath, filetype, ProjectConfig.ParserConfig)
 	if err != nil {
 		return
 	}
