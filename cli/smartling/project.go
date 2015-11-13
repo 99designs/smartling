@@ -107,13 +107,13 @@ var projectStatusCommand = cli.Command{
 }
 
 var projectPullCommand = cli.Command{
-	Name:  "pull",
-	Usage: "translate local project files using Smartling as a translation memory",
-
+	Name:        "pull",
+	Usage:       "translate local project files using Smartling as a translation memory",
+	Description: "pull [<prefix>]",
 	Action: func(c *cli.Context) {
 		if len(c.Args()) > 1 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: status [<prefix>]")
+			log.Fatalln("Usage: pull [<prefix>]")
 		}
 
 		prefix := prefixOrGitPrefix(c.Args().Get(0))
