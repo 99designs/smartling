@@ -147,9 +147,9 @@ func pullProjectFile(projectFilepath, locale, prefix string) {
 	fp := localPullFilePath(projectFilepath, locale)
 	cached := ""
 	if hit {
-		cached = "(using cache)"
+		cached = "(from cache)"
 	}
-	fmt.Println(fp, cached)
+	fmt.Println("Pulled", fp, cached)
 	err = ioutil.WriteFile(fp, b, 0644)
 	logAndQuitIfError(err)
 }

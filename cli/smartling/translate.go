@@ -71,7 +71,7 @@ func translateProjectFile(projectFilepath, locale, prefix string) (hit bool, b [
 	filetype := filetypeForProjectFile(projectFilepath)
 
 	h = hash(localpath, filetype, ProjectConfig.ParserConfig)
-	cacheFilePath := filepath.Join(cachePath, locale, h)
+	cacheFilePath := filepath.Join(cachePath, fmt.Sprintf("%s.%s", h, locale))
 
 	// check cache
 	hit, b = getCachedTranslations(cacheFilePath)
