@@ -44,14 +44,8 @@ func (ss stringSlice) contains(s string) bool {
 }
 
 func projectFileHash(projectFilepath string) string {
-	return hash(
-		localRelativeFilePath(projectFilepath),
-		filetypeForProjectFile(projectFilepath),
-		ProjectConfig.ParserConfig,
-	)
-}
+	localpath := localRelativeFilePath(projectFilepath)
 
-func hash(localpath string, filetype smartling.FileType, parserConfig map[string]string) string {
 	file, err := os.Open(localpath)
 	logAndQuitIfError(err)
 	defer file.Close()
@@ -60,7 +54,7 @@ func hash(localpath string, filetype smartling.FileType, parserConfig map[string
 	_, err = io.Copy(hash, file)
 	logAndQuitIfError(err)
 
-	_, err = hash.Write([]byte(fmt.Sprintf("%#v%#v", filetype, parserConfig)))
+	_, err = hash.Write([]byte(fmt.Sprintf("%#v%#v", filetypeForProjectFile(projectFilepath), ProjectConfig.ParserConfig)))
 	logAndQuitIfError(err)
 
 	b := []byte{}
@@ -70,10 +64,9 @@ func hash(localpath string, filetype smartling.FileType, parserConfig map[string
 }
 
 func translateProjectFile(projectFilepath, locale, prefix string) (hit bool, b []byte, err error, h string) {
-	localpath := localRelativeFilePath(projectFilepath)
 	filetype := filetypeForProjectFile(projectFilepath)
+	h = projectFileHash(projectFilepath)
 
-	h = hash(localpath, filetype, ProjectConfig.ParserConfig)
 	cacheFilePath := filepath.Join(cachePath, fmt.Sprintf("%s.%s", h, locale))
 
 	// check cache
