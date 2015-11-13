@@ -46,6 +46,17 @@ func fetchRemoteFileList() stringSlice {
 	return files
 }
 
+var remoteFileList = stringSlice{}
+var remoteFileListFetched = false
+
+func getRemoteFileList() stringSlice {
+	if !remoteFileListFetched {
+		remoteFileList = fetchRemoteFileList()
+	}
+
+	return remoteFileList
+}
+
 func fetchLocales() []string {
 	ll := []string{}
 	locales, err := client.Locales()
@@ -147,11 +158,11 @@ func pullProjectFile(projectFilepath, locale, prefix string) {
 	fp := localPullFilePath(projectFilepath, locale)
 	cached := ""
 	if hit {
-		cached = "(from cache)"
+		cached = "(using cache)"
 	}
-	fmt.Println("Pulled", fp, cached)
 	err = ioutil.WriteFile(fp, b, 0644)
 	logAndQuitIfError(err)
+	fmt.Println("Wrote", fp, cached)
 }
 
 func cleanPrefix(s string) string {
@@ -253,16 +264,39 @@ func pushProjectFile(projectFilepath, prefix string) string {
 	return remoteFile
 }
 
+func pushProjectFileIfNotExists(projectFilepath, prefix string) (string, bool) {
+	remoteFiles := getRemoteFileList()
+	remoteFileName := projectFileRemoteName(projectFilepath, prefix)
+
+	if remoteFiles.contains(remoteFileName) {
+		return remoteFileName, false
+	}
+
+	return pushProjectFile(projectFilepath, prefix), true
+}
+
 func pushAllProjectFiles(prefix string) {
+	pushedFilesCount := 0
+
+	// do this first to cache result and prevent races in the goroutines
+	_ = getRemoteFileList()
+
 	var wg sync.WaitGroup
 	for _, projectFilepath := range ProjectConfig.Files() {
 		wg.Add(1)
 		go func(projectFilepath string) {
 			defer wg.Done()
-			_ = pushProjectFile(projectFilepath, prefix)
+			_, pushed := pushProjectFileIfNotExists(projectFilepath, prefix)
+			if pushed {
+				pushedFilesCount++
+			}
 		}(projectFilepath)
 	}
 	wg.Wait()
+
+	if pushedFilesCount == 0 {
+		fmt.Println("Nothing to do")
+	}
 }
 
 func filetypeForProjectFile(projectFilepath string) smartling.FileType {

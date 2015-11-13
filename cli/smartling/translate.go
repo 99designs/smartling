@@ -32,17 +32,6 @@ func findCachePath() string {
 	return cachePath
 }
 
-type stringSlice []string
-
-func (ss stringSlice) contains(s string) bool {
-	for _, t := range ss {
-		if t == s {
-			return true
-		}
-	}
-	return false
-}
-
 func projectFileHash(projectFilepath string) string {
 	localpath := localRelativeFilePath(projectFilepath)
 
@@ -104,21 +93,13 @@ func getCachedTranslations(cacheFilePath string) (hit bool, b []byte) {
 	return
 }
 
-var allRemoteFiles = []string{}
-var allRemoteFilesFetched = false
-
 func findIdenticalRemoteFileOrPush(projectFilepath, prefix string) string {
-	if !allRemoteFilesFetched {
-		allRemoteFiles = fetchRemoteFileList()
-	}
-
 	remoteFile := projectFileRemoteName(projectFilepath, prefix)
+	allRemoteFiles := getRemoteFileList()
 
-	for _, f := range allRemoteFiles {
-		if f == remoteFile {
-			// exact file already exists remotely
-			return f
-		}
+	if allRemoteFiles.contains(remoteFile) {
+		// exact file already exists remotely
+		return remoteFile
 	}
 
 	for _, f := range allRemoteFiles {
@@ -138,6 +119,8 @@ func translateViaSmartling(projectFilepath, prefix, locale string) (b []byte, er
 		FileUri: remotePath,
 		Locale:  locale,
 	})
+
+	fmt.Println("Pulled", remotePath)
 
 	return
 }
