@@ -104,20 +104,14 @@ func hash(locale, localpath string, filetype smartling.FileType, parserConfig ma
 	return hex.EncodeToString(hash.Sum(b))
 }
 
-func translateViaCache(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (hit bool, b []byte, err error, ch string) {
+func translate(locale, localpath string, filetype smartling.FileType, parserConfig map[string]string) (hit bool, b []byte, err error, h string) {
+	h = hash(locale, localpath, filetype, parserConfig)
+	cacheFilePath := filepath.Join(cachePath, h)
 
-	ch = hash(locale, localpath, filetype, parserConfig)
-	cacheFilePath := filepath.Join(cachePath, ch)
-
-	// get cached file
-	if cacheFile, err := os.Open(cacheFilePath); err == nil {
-		if cfStat, err := cacheFile.Stat(); err == nil {
-			if time.Now().Sub(cfStat.ModTime()) < ProjectConfig.cacheMaxAge() {
-				if b, err = ioutil.ReadFile(cacheFilePath); err == nil {
-					return true, b, nil, ch // return the cached data
-				}
-			}
-		}
+	// check cache
+	hit, b = getCachedTranslations(cacheFilePath)
+	if hit {
+		return hit, b, nil, h
 	}
 
 	// translate
@@ -130,6 +124,20 @@ func translateViaCache(locale, localpath string, filetype smartling.FileType, pa
 	err = ioutil.WriteFile(cacheFilePath, b, 0644)
 	if err != nil {
 		return
+	}
+
+	return
+}
+
+func getCachedTranslations(cacheFilePath string) (hit bool, b []byte) {
+	if cacheFile, err := os.Open(cacheFilePath); err == nil {
+		if cfStat, err := cacheFile.Stat(); err == nil {
+			if time.Now().Sub(cfStat.ModTime()) < ProjectConfig.cacheMaxAge() {
+				if b, err = ioutil.ReadFile(cacheFilePath); err == nil {
+					return true, b // return the cached data
+				}
+			}
+		}
 	}
 
 	return
