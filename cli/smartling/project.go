@@ -232,32 +232,35 @@ Outputs the uploaded files for the given prefix
 	},
 }
 
+func pushFile(projectFilepath string, prefix string, locales []string) {
+	remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
+
+	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
+		FileUri:      remoteFile,
+		FileType:     filetypeForProjectFile(projectFilepath),
+		ParserConfig: ProjectConfig.ParserConfig,
+	})
+	logAndQuitIfError(err)
+
+	remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
+
+	// when using a prefix, we don't want to see files with
+	// completely translated content
+	if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
+		err := client.Delete(remoteFile)
+		logAndQuitIfError(err)
+	} else {
+		fmt.Println(remoteFile)
+	}
+}
+
 func push(prefix string, locales []string) {
 	var wg sync.WaitGroup
 	for _, projectFilepath := range ProjectConfig.Files() {
 		wg.Add(1)
 		go func(prefix, projectFilepath string) {
 			defer wg.Done()
-
-			remoteFile := filepath.Clean(prefix + "/" + projectFilepath)
-
-			_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-				FileUri:      remoteFile,
-				FileType:     filetypeForProjectFile(projectFilepath),
-				ParserConfig: ProjectConfig.ParserConfig,
-			})
-			logAndQuitIfError(err)
-
-			remoteFileStatuses := fetchStatusForLocales(remoteFile, locales)
-
-			// when using a prefix, we don't want to see files with
-			// completely translated content
-			if prefix != "" && remoteFileStatuses.NotCompletedStringCount() == 0 {
-				err := client.Delete(remoteFile)
-				logAndQuitIfError(err)
-			} else {
-				fmt.Println(remoteFile)
-			}
+			pushFile(projectFilepath, prefix, locales)
 		}(prefix, projectFilepath)
 	}
 	wg.Wait()
