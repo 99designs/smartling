@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/99designs/smartling"
@@ -110,24 +111,40 @@ func getCachedTranslations(cacheFilePath string) (hit bool, b []byte) {
 	return
 }
 
+var allRemoteFiles = []string{}
+var allRemoteFilesFetched = false
+
+func findIdenticalRemoteFileOrPush(projectFilepath, prefix string) string {
+	if !allRemoteFilesFetched {
+		allRemoteFiles = fetchRemoteFileList()
+	}
+
+	remoteFile := projectFileRemoteName(projectFilepath, prefix)
+
+	for _, f := range allRemoteFiles {
+		if f == remoteFile {
+			// file already exists remotely
+			return f
+		}
+	}
+
+	for _, f := range allRemoteFiles {
+		if strings.Contains(f, fmt.Sprintf("/%s/", projectFileHash(projectFilepath))) {
+			// if file with the same hash exists remotely
+			return f
+		}
+	}
+
+	return pushProjectFile(projectFilepath, prefix)
+}
+
 func translateViaSmartling(projectFilepath, locale, prefix string, filetype smartling.FileType, parserConfig map[string]string) (b []byte, err error) {
-	remotePath := projectFileRemoteName(projectFilepath, prefix)
+	remotePath := findIdenticalRemoteFileOrPush(projectFilepath, prefix)
 
 	b, err = client.Get(&smartling.GetRequest{
 		FileUri: remotePath,
 		Locale:  locale,
 	})
-
-	// file might not exist, try pushing first
-	if err != nil {
-
-		remotePath := pushProjectFile(projectFilepath, prefix)
-
-		b, err = client.Get(&smartling.GetRequest{
-			FileUri: remotePath,
-			Locale:  locale,
-		})
-	}
 
 	return
 }

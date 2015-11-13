@@ -54,13 +54,9 @@ func (statuses ProjectStatus) TotalStringsCount() int {
 func GetProjectStatus(prefix string, locales []string) ProjectStatus {
 	var wg sync.WaitGroup
 	statuses := ProjectStatus{}
-	remoteFiles := fetchRemoteFileList()
 
 	for _, projectFilepath := range ProjectConfig.Files() {
-		remoteFilePath := projectFileRemoteName(projectFilepath, prefix)
-		if !remoteFiles.contains(remoteFilePath) {
-			pushProjectFile(projectFilepath, prefix)
-		}
+		remoteFilePath := findIdenticalRemoteFileOrPush(projectFilepath, prefix)
 
 		for _, l := range locales {
 			wg.Add(1)
