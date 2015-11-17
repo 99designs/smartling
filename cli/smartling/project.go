@@ -257,7 +257,7 @@ func projectFileRemoteName(projectFilepath, prefix string) string {
 		remoteFile = fmt.Sprintf("%s/%s/%s", prefix, projectFileHash(projectFilepath), projectFilepath)
 	}
 
-	return path.Clean(remoteFile)
+	return path.Clean("/" + remoteFile)
 }
 
 func pushProjectFile(projectFilepath, prefix string) string {
@@ -278,7 +278,7 @@ func pushProjectFileIfNotExists(projectFilepath, prefix string) (string, bool) {
 	remoteFiles := getRemoteFileList()
 	remoteFileName := projectFileRemoteName(projectFilepath, prefix)
 
-	if remoteFiles.contains(remoteFileName) {
+	if prefix != "" && remoteFiles.contains(remoteFileName) {
 		return remoteFileName, false
 	}
 
