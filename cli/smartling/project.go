@@ -34,6 +34,12 @@ var ProjectCommand = cli.Command{
 	},
 }
 
+var prefixFlag = cli.StringFlag{
+	Name:   "prefix",
+	Usage:  "Prefix to use for uploaded file names",
+	EnvVar: "SMARTLING_PREFIX",
+}
+
 func fetchRemoteFileList() stringSlice {
 	files := stringSlice{}
 	listFiles, err := client.List(smartling.ListRequest{})
@@ -69,9 +75,8 @@ func fetchLocales() []string {
 }
 
 var projectFilesCommand = cli.Command{
-	Name:        "files",
-	Usage:       "lists the local files",
-	Description: "files",
+	Name:  "files",
+	Usage: "lists the local files",
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 0 {
 			log.Println("Wrong number of arguments")
@@ -85,22 +90,22 @@ var projectFilesCommand = cli.Command{
 }
 
 var projectStatusCommand = cli.Command{
-	Name:        "status",
-	Usage:       "show the status of the project's remote files",
-	Description: "status [<prefix>]",
+	Name:  "status",
+	Usage: "show the status of the project's remote files",
 	Flags: []cli.Flag{
+		prefixFlag,
 		cli.BoolFlag{
 			Name:  "awaiting-auth",
 			Usage: "Output the number of strings Awaiting Authorization",
 		},
 	},
 	Action: func(c *cli.Context) {
-		if len(c.Args()) > 1 {
+		if len(c.Args()) > 0 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: status [<prefix>]")
+			log.Fatalln("Usage: status")
 		}
 
-		prefix := prefixOrGitPrefix(c.Args().Get(0))
+		prefix := prefixOrGitPrefix(c.String("prefix"))
 		locales := fetchLocales()
 		statuses := GetProjectStatus(prefix, locales)
 
@@ -118,16 +123,18 @@ var projectStatusCommand = cli.Command{
 }
 
 var projectPullCommand = cli.Command{
-	Name:        "pull",
-	Usage:       "translate local project files using Smartling as a translation memory",
-	Description: "pull [<prefix>]",
+	Name:  "pull",
+	Usage: "translate local project files using Smartling as a translation memory",
+	Flags: []cli.Flag{
+		prefixFlag,
+	},
 	Action: func(c *cli.Context) {
-		if len(c.Args()) > 1 {
+		if len(c.Args()) > 0 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: pull [<prefix>]")
+			log.Fatalln("Usage: pull")
 		}
 
-		prefix := prefixOrGitPrefix(c.Args().Get(0))
+		prefix := prefixOrGitPrefix(c.String("prefix"))
 
 		pullAllProjectFiles(prefix)
 	},
@@ -228,16 +235,16 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 var projectPushCommand = cli.Command{
 	Name:  "push",
 	Usage: "upload local project files that contain untranslated strings",
-	Description: `push [<prefix>]
-Outputs the uploaded files for the given prefix
-`,
+	Flags: []cli.Flag{
+		prefixFlag,
+	},
 	Action: func(c *cli.Context) {
-		if len(c.Args()) > 1 {
+		if len(c.Args()) > 0 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: push [<prefix>]")
+			log.Fatalln("Usage: push")
 		}
 
-		prefix := prefixOrGitPrefix(c.Args().Get(0))
+		prefix := prefixOrGitPrefix(c.String("prefix"))
 
 		pushAllProjectFiles(prefix)
 	},
