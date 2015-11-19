@@ -44,31 +44,25 @@ type UploadResponse struct {
 	WordCount   int  `json:"wordCount"`
 }
 
-func newfileUploadRequest(url string, uv url.Values, formFileKey, formFilePath string) (*http.Request, error) {
-	f, err := os.Open(formFilePath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
+func newfileUploadRequest(url string, uv url.Values, filename string, contents io.Reader) (*http.Request, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
 	for k, uvv := range uv {
 		for _, v := range uvv {
-			err = writer.WriteField(k, v)
+			err := writer.WriteField(k, v)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	part, err := writer.CreateFormFile("file", filepath.Base(formFilePath))
+	part, err := writer.CreateFormFile("file", filename)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = io.Copy(part, f)
+	_, err = io.Copy(part, contents)
 	if err != nil {
 		return nil, err
 	}
@@ -84,14 +78,14 @@ func newfileUploadRequest(url string, uv url.Values, formFileKey, formFilePath s
 	return req, err
 }
 
-func (c *Client) Upload(localFilePath string, req *UploadRequest) (*UploadResponse, error) {
+func (c *Client) UploadReader(filename string, contents io.Reader, req *UploadRequest) (*UploadResponse, error) {
 	v, err := req.urlValues()
 	if err != nil {
 		return nil, err
 	}
 	c.addCredentials(&v)
 
-	request, err := newfileUploadRequest(c.BaseUrl+"/file/upload", v, "file", localFilePath)
+	request, err := newfileUploadRequest(c.BaseUrl+"/file/upload", v, filename, contents)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +99,16 @@ func (c *Client) Upload(localFilePath string, req *UploadRequest) (*UploadRespon
 	err = unmarshalResponseData(response, &ur)
 
 	return &ur, err
+}
+
+func (c *Client) Upload(localFilePath string, req *UploadRequest) (*UploadResponse, error) {
+	f, err := os.Open(localFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	return c.UploadReader(filepath.Base(localFilePath), f, req)
 }
 
 type GetRequest struct {
