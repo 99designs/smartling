@@ -21,7 +21,7 @@ client.List(smartling.ListRequest{
 
 The `smartling` CLI tool provides a familiar unix-like command interface to the Smartling API, as well as providing a `project` command to manage a project's local files.
 
-Install it with `go get github.com/99designs/smartling/cli/smartling`
+Install it with `go get github.com/99designs/smartling/cli/smartling` or run it as a docker container e.g. `docker run -v MyProject:/work 99designs/smartling ls`
 
 
 ```
@@ -37,21 +37,10 @@ COMMANDS:
    project      manage local project files
 ```
 
-### Docker container
-
-The smartling CLI tool is also packaged as a docker container.
-
-```
-docker run -v MyProject:/work 99designs/smartling ls
-```
 
 ### The `smartling project` command
 
 The `smartling project` commands are designed for some common use-cases in a dev or CI environment.
-
-"Pulling" populates local files with translations from Smartling, without actually putting a new file into the project.
-
-"Pushing" uploads files to a smartling project using a prefix. By default it uses the git branch name, but you can also specifiy the wanted prefix as an argument.
 
 ```
 COMMANDS:
@@ -60,6 +49,10 @@ COMMANDS:
    pull   translate local project files using Smartling as a translation memory
    push   upload local project files that contain untranslated strings
 ```
+
+"Pushing" uploads files to a smartling project using a prefix. By default it uses the git branch name , but you can also specifiy the wanted prefix as an argument. A hash is also used in the prefix to prevent clobbering.
+
+"Pulling" translates local project files using Smartling as a translation memory.
 
 Other cool features:
 - downloaded translation files are cached (default is 4 hours) in `~/.smartling/cache`
