@@ -37,6 +37,14 @@ COMMANDS:
    project      manage local project files
 ```
 
+### Docker container
+
+The smartling CLI tool is also packaged as a docker container.
+
+```
+docker run -v MyProject:/work 99designs/smartling ls
+```
+
 ### The `smartling project` command
 
 The `smartling project` commands are designed for some common use-cases in a dev or CI environment.
