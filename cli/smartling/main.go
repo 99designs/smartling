@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/99designs/smartling"
 	"github.com/99designs/smartling/Godeps/_workspace/src/github.com/codegangsta/cli"
@@ -24,9 +25,11 @@ func logAndQuitIfError(err error) {
 }
 
 var cmdBefore = func(c *cli.Context) error {
-	apiKey := c.String("apikey")
-	projectId := c.String("projectid")
-	configFile := c.String("configfile")
+	apiKey := c.GlobalString("apikey")
+	projectId := c.GlobalString("projectid")
+	configFile := c.GlobalString("configfile")
+	timeout := c.GlobalInt("timeout")
+
 	if configFile == "" {
 		configFile = "smartling.yml"
 	}
@@ -59,6 +62,10 @@ var cmdBefore = func(c *cli.Context) error {
 		sc = smartling.NewSandboxClient(apiKey, projectId)
 	} else {
 		sc = smartling.NewClient(apiKey, projectId)
+	}
+
+	if timeout != 0 {
+		sc.SetHttpTimeout(time.Duration(timeout) * time.Second)
 	}
 
 	client = &smartling.FaultTolerantClient{sc, 10}
@@ -95,7 +102,13 @@ func main() {
 			Name:   "configfile,c",
 			Usage:  "Project config file to use",
 			EnvVar: "SMARTLING_CONFIGFILE",
+		}, cli.IntFlag{
+			Name:   "timeout,t",
+			Value:  60,
+			Usage:  "Maximum time in seconds for an API request to take",
+			EnvVar: "SMARTLING_API_TIMEOUT",
 		},
+
 		cli.VersionFlag,
 	}
 	app.Commands = []cli.Command{

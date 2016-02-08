@@ -52,6 +52,10 @@ func httpClient() *http.Client {
 	}
 }
 
+func (c *Client) SetHttpTimeout(t time.Duration) {
+	c.httpClient.Timeout = t
+}
+
 func NewClient(apiKey string, projectId string) *Client {
 	return &Client{
 		BaseUrl:    baseUrlProd,
