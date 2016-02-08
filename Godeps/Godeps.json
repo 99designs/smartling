@@ -7,8 +7,8 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/codegangsta/cli",
-			"Comment": "1.2.0-155-g96f1fed",
-			"Rev": "96f1fedb28e10f2e5ad3fd4b7347101529a7ca56"
+			"Comment": "1.2.0-211-gd5f087d",
+			"Rev": "d5f087da9da695cf28797fba388430f5fce93139"
 		},
 		{
 			"ImportPath": "github.com/google/go-querystring/query",
