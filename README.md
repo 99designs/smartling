@@ -21,7 +21,9 @@ client.List(smartling.ListRequest{
 
 The `smartling` CLI tool provides a familiar unix-like command interface to the Smartling API, as well as providing a `project` command to manage a project's local files.
 
-Install it with `go get github.com/99designs/smartling/cli/smartling` or run it as a docker container e.g. `docker run -v MyProject:/work 99designs/smartling ls`
+Install it with `go get github.com/99designs/smartling/cli/smartling`  
+*or*  
+run it as a docker container `docker run --rm -v MyProject:/work 99designs/smartling ls`
 
 
 ```
