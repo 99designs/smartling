@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/99designs/smartling"
-	"github.com/99designs/smartling/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/codegangsta/cli"
 )
 
 func ListConditionSlice(cc []string) []smartling.ListCondition {

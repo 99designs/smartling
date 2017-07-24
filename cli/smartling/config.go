@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/99designs/smartling"
-	"github.com/99designs/smartling/Godeps/_workspace/src/gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var ProjectConfig *Config
