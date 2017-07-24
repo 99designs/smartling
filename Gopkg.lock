@@ -8,14 +8,16 @@
   version = "v1.19.1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/google/go-querystring"
   packages = ["query"]
-  revision = "547ef5ac979778feb2f760cdb5f4eae1a2207b86"
+  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 
 [[projects]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "c1cd2254a6dd314c9d73c338c12688c9325d85c6"
+  revision = "25c4ec802a7d637f88d584ab26798e94ad14c13b"
 
 [solve-meta]
   analyzer-name = "dep"
