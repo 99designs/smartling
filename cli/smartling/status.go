@@ -18,12 +18,12 @@ func MustStatus(remotefile, locale string) smartling.FileStatus {
 
 type ProjectStatus struct {
 	sync.RWMutex
-	internal map[string]map[string]smartling.FileStatus
+	statuses map[string]map[string]smartling.FileStatus
 }
 
 func New() *ProjectStatus {
 	return &ProjectStatus{
-		internal: make(map[string]map[string]smartling.FileStatus),
+		statuses: make(map[string]map[string]smartling.FileStatus),
 	}
 }
 
@@ -31,12 +31,12 @@ func (ps *ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatus)
 	ps.Lock()
 	defer ps.Unlock()
 
-	_, ok := ps.internal[remotefile]
+	_, ok := ps.statuses[remotefile]
 	if !ok {
 		mm := make(map[string]smartling.FileStatus)
-		ps.internal[remotefile] = mm
+		ps.statuses[remotefile] = mm
 	}
-	ps.internal[remotefile][locale] = fs
+	ps.statuses[remotefile][locale] = fs
 }
 
 func (ps *ProjectStatus) AwaitingAuthorizationCount() int {
@@ -44,7 +44,7 @@ func (ps *ProjectStatus) AwaitingAuthorizationCount() int {
 	defer ps.RUnlock()
 
 	c := 0
-	for _, s := range ps.internal {
+	for _, s := range ps.statuses {
 		for _, status := range s {
 			c += status.AwaitingAuthorizationStringCount()
 			break
@@ -58,7 +58,7 @@ func (ps *ProjectStatus) TotalStringsCount() int {
 	defer ps.RUnlock()
 
 	c := 0
-	for _, s := range ps.internal {
+	for _, s := range ps.statuses {
 		for _, status := range s {
 			c += status.StringCount
 			break
@@ -88,7 +88,7 @@ func GetProjectStatus(prefix string, locales []string) *ProjectStatus {
 	return statuses
 }
 
-func PrintProjectStatusTable(statuses *ProjectStatus, locales []string) {
+func PrintProjectStatusTable(ps *ProjectStatus, locales []string) {
 	// Format in columns
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 
@@ -99,10 +99,10 @@ func PrintProjectStatusTable(statuses *ProjectStatus, locales []string) {
 	}
 	fmt.Fprint(w, "\n")
 
-	for projectFilepath, _ := range statuses.internal {
+	for projectFilepath, _ := range ps.statuses {
 		aa := false
 		for _, locale := range locales {
-			status := statuses.internal[projectFilepath][locale]
+			status := ps.statuses[projectFilepath][locale]
 			if !aa {
 				fmt.Fprintf(w, "%7d", status.AwaitingAuthorizationStringCount())
 				aa = true
