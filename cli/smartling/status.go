@@ -16,32 +16,38 @@ func MustStatus(remotefile, locale string) smartling.FileStatus {
 	return fs
 }
 
-type ProjectStatus map[string]map[string]smartling.FileStatus
+type ProjectStatus struct {
+	sync.RWMutex
+	internal map[string]map[string]smartling.FileStatus
+}
 
 func (statuses ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatus) {
-	_, ok := statuses[remotefile]
+	statuses.Lock()
+	_, ok := statuses.internal[remotefile]
 	if !ok {
 		mm := make(map[string]smartling.FileStatus)
-		statuses[remotefile] = mm
+		statuses.internal[remotefile] = mm
 	}
-	statuses[remotefile][locale] = fs
+	statuses.internal[remotefile][locale] = fs
+	statuses.Unlock()
 }
 
 func (statuses ProjectStatus) AwaitingAuthorizationCount() int {
+	statuses.RLock()
 	c := 0
-	for _, s := range statuses {
+	for _, s := range statuses.internal {
 		for _, status := range s {
 			c += status.AwaitingAuthorizationStringCount()
 			break
 		}
 	}
-
+	statuses.RUnlock()
 	return c
 }
 
 func (statuses ProjectStatus) TotalStringsCount() int {
 	c := 0
-	for _, s := range statuses {
+	for _, s := range statuses.internal {
 		for _, status := range s {
 			c += status.StringCount
 			break
@@ -82,10 +88,10 @@ func PrintProjectStatusTable(statuses ProjectStatus, locales []string) {
 	}
 	fmt.Fprint(w, "\n")
 
-	for projectFilepath, _ := range statuses {
+	for projectFilepath, _ := range statuses.internal {
 		aa := false
 		for _, locale := range locales {
-			status := statuses[projectFilepath][locale]
+			status := statuses.internal[projectFilepath][locale]
 			if !aa {
 				fmt.Fprintf(w, "%7d", status.AwaitingAuthorizationStringCount())
 				aa = true
