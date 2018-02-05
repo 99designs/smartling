@@ -21,33 +21,44 @@ type ProjectStatus struct {
 	internal map[string]map[string]smartling.FileStatus
 }
 
-func (statuses ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatus) {
-	statuses.Lock()
-	_, ok := statuses.internal[remotefile]
-	if !ok {
-		mm := make(map[string]smartling.FileStatus)
-		statuses.internal[remotefile] = mm
+func New() *ProjectStatus {
+	return &ProjectStatus{
+		internal: make(map[string]map[string]smartling.FileStatus),
 	}
-	statuses.internal[remotefile][locale] = fs
-	statuses.Unlock()
 }
 
-func (statuses ProjectStatus) AwaitingAuthorizationCount() int {
-	statuses.RLock()
+func (ps *ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatus) {
+	ps.Lock()
+	defer ps.Unlock()
+
+	_, ok := ps.internal[remotefile]
+	if !ok {
+		mm := make(map[string]smartling.FileStatus)
+		ps.internal[remotefile] = mm
+	}
+	ps.internal[remotefile][locale] = fs
+}
+
+func (ps *ProjectStatus) AwaitingAuthorizationCount() int {
+	ps.RLock()
+	defer ps.RUnlock()
+
 	c := 0
-	for _, s := range statuses.internal {
+	for _, s := range ps.internal {
 		for _, status := range s {
 			c += status.AwaitingAuthorizationStringCount()
 			break
 		}
 	}
-	statuses.RUnlock()
 	return c
 }
 
-func (statuses ProjectStatus) TotalStringsCount() int {
+func (ps *ProjectStatus) TotalStringsCount() int {
+	ps.RLock()
+	defer ps.RUnlock()
+
 	c := 0
-	for _, s := range statuses.internal {
+	for _, s := range ps.internal {
 		for _, status := range s {
 			c += status.StringCount
 			break
@@ -57,9 +68,9 @@ func (statuses ProjectStatus) TotalStringsCount() int {
 	return c
 }
 
-func GetProjectStatus(prefix string, locales []string) ProjectStatus {
+func GetProjectStatus(prefix string, locales []string) *ProjectStatus {
 	var wg sync.WaitGroup
-	statuses := ProjectStatus{}
+	statuses := New()
 
 	for _, projectFilepath := range ProjectConfig.Files() {
 		remoteFilePath := findIdenticalRemoteFileOrPush(projectFilepath, prefix)
@@ -77,7 +88,7 @@ func GetProjectStatus(prefix string, locales []string) ProjectStatus {
 	return statuses
 }
 
-func PrintProjectStatusTable(statuses ProjectStatus, locales []string) {
+func PrintProjectStatusTable(statuses *ProjectStatus, locales []string) {
 	// Format in columns
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
 
