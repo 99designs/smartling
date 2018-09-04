@@ -280,11 +280,16 @@ var LocalesCommand = cli.Command{
 			log.Fatalln("Usage: locales")
 		}
 
-		r, err := client.Locales()
+		// Should this somehow be extracted out to a method?
+		pd, err := client.Client.GetProjectDetails("09bd710ee")
 		logAndQuitIfError(err)
+		r := pd.TargetLocales
+		// r, err := client.Locales()
 
 		for _, l := range r {
-			fmt.Printf("%-5s  %-23s  %s\n", l.Locale, l.Name, l.Translated)
+			if l.Enabled {
+				fmt.Printf("%-5s  %s\n", l.LocaleID, l.Description)
+			}
 		}
 	},
 }
