@@ -63,9 +63,10 @@ func (c *FaultTolerantClient) execWithRetry(f func() error) {
 	}
 }
 
-func (c *FaultTolerantClient) Upload(localFilePath string, req *UploadRequest) (r *UploadResponse, err error) {
+func (c *FaultTolerantClient) Upload(req *smartlingNew.FileUploadRequest) (r *smartlingNew.FileUploadResult, err error) {
 	c.execWithRetry(func() error {
-		r, err = c.Client.Upload(localFilePath, req)
+		r, err = c.Client.UploadFile(c.ProjectID, *req)
+
 		return err
 	})
 	return

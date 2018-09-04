@@ -159,7 +159,7 @@ var GetCommand = cli.Command{
 var PutCommand = cli.Command{
 	Name:        "put",
 	Usage:       "uploads a local file",
-	Description: "put <local file> <remote file>",
+	Description: "put <local file>",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: "filetype",
@@ -171,17 +171,16 @@ var PutCommand = cli.Command{
 	},
 	Before: cmdBefore,
 	Action: func(c *cli.Context) {
-		if len(c.Args()) != 2 {
+		if len(c.Args()) != 1 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: put <local file> <remote file>")
+			log.Fatalln("Usage: put <local file>")
 		}
 
 		localpath := c.Args().Get(0)
-		remotepath := c.Args().Get(1)
 
-		ft := smartling.FileType(c.String("filetype"))
+		ft := smartlingNew.FileType(c.String("filetype"))
 		if ft == "" {
-			ft = smartling.FileTypeByExtension(filepath.Ext(localpath))
+			ft = smartlingNew.GetFileTypeByExtension(filepath.Ext(localpath))
 		}
 
 		parserconfig := map[string]string{}
@@ -195,15 +194,21 @@ var PutCommand = cli.Command{
 			}
 		}
 
-		r, err := client.Upload(localpath, &smartling.UploadRequest{
-			FileUri:      remotepath,
-			FileType:     ft,
-			ParserConfig: parserconfig,
-			Approved:     c.Bool("approve"),
+		f, err := ioutil.ReadFile(localpath)
+		if err != nil {
+			logAndQuitIfError(err)
+		}
+
+		r, err := client.Upload(&smartlingNew.FileUploadRequest{
+			File:           f,
+			FileType:       ft,
+			Authorize:      c.Bool("approve"),
+			FileURIRequest: smartlingNew.FileURIRequest{FileURI: localpath},
 		})
+
 		logAndQuitIfError(err)
 
-		fmt.Println("Overwritten: ", r.OverWritten)
+		fmt.Println("Overwritten: ", r.Overwritten)
 		fmt.Println("String Count:", r.StringCount)
 		fmt.Println("Word Count:  ", r.WordCount)
 	},
