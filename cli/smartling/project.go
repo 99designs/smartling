@@ -45,8 +45,8 @@ func fetchRemoteFileList() stringSlice {
 	listFiles, err := client.List(smartling.ListRequest{})
 	logAndQuitIfError(err)
 
-	for _, fs := range listFiles {
-		files = append(files, fs.FileUri)
+	for _, fs := range listFiles.Items {
+		files = append(files, fs.FileURI)
 	}
 
 	return files
@@ -65,11 +65,11 @@ func getRemoteFileList() stringSlice {
 
 func fetchLocales() []string {
 	ll := []string{}
-	locales, err := client.Locales()
-	logAndQuitIfError(err)
-	for _, l := range locales {
-		ll = append(ll, l.Locale)
-	}
+	// locales, err := client.Locales()
+	// logAndQuitIfError(err)
+	// for _, l := range locales {
+	// 	ll = append(ll, l.Locale)
+	// }
 
 	return ll
 }
@@ -141,24 +141,24 @@ var projectPullCommand = cli.Command{
 }
 
 func pullAllProjectFiles(prefix string) {
-	locales, err := client.Locales()
-	logAndQuitIfError(err)
+	// locales, err := client.Locales()
+	// logAndQuitIfError(err)
 
-	// do this first to cache result and prevent races in the goroutines
-	_ = getRemoteFileList()
+	// // do this first to cache result and prevent races in the goroutines
+	// _ = getRemoteFileList()
 
-	var wg sync.WaitGroup
-	for _, projectFilepath := range ProjectConfig.Files() {
-		for _, l := range locales {
-			wg.Add(1)
-			go func(locale, projectFilepath string) {
-				defer wg.Done()
+	// var wg sync.WaitGroup
+	// for _, projectFilepath := range ProjectConfig.Files() {
+	// 	for _, l := range locales {
+	// 		wg.Add(1)
+	// 		go func(locale, projectFilepath string) {
+	// 			defer wg.Done()
 
-				pullProjectFile(projectFilepath, locale, prefix)
-			}(l.Locale, projectFilepath)
-		}
-	}
-	wg.Wait()
+	// 			pullProjectFile(projectFilepath, locale, prefix)
+	// 		}(l.Locale, projectFilepath)
+	// 	}
+	// }
+	// wg.Wait()
 }
 
 func pullProjectFile(projectFilepath, locale, prefix string) {
@@ -263,12 +263,12 @@ func projectFileRemoteName(projectFilepath, prefix string) string {
 func pushProjectFile(projectFilepath, prefix string) string {
 	remoteFile := projectFileRemoteName(projectFilepath, prefix)
 
-	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-		FileUri:      remoteFile,
-		FileType:     filetypeForProjectFile(projectFilepath),
-		ParserConfig: ProjectConfig.ParserConfig,
-	})
-	logAndQuitIfError(err)
+	// _, err := client.Upload(projectFilepath, &smartling.UploadRequest{
+	// 	s.FileUri:    remoteFile,
+	// 	FileType:     filetypeForProjectFile(projectFilepath),
+	// 	ParserConfig: ProjectConfig.ParserConfig,
+	// })
+	// logAndQuitIfError(err)
 
 	fmt.Println("Uploaded", remoteFile)
 	return remoteFile

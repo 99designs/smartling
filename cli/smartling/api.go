@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/99designs/smartling"
+	smartlingNew "github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
@@ -45,15 +47,18 @@ func PrintList(uriMask string, olderThan time.Duration, long bool, conditions []
 	files, err := client.List(req)
 	logAndQuitIfError(err)
 
+	// TODO: fix this "long"
 	if long {
-		fmt.Println("total", len(files))
-		for _, f := range files {
-			t := time.Time(f.LastUploaded).Format("2 Jan 15:04")
-			fmt.Printf("%3d strings  %s  %s\n", f.StringCount, t, f.FileUri)
+		fmt.Println("total", files.TotalCount)
+		for _, f := range files.Items {
+			// t := time.Time(f.LastUploaded).Format("2 Jan 15:04")
+			fmt.Println(f.FileURI)
+
+			// fmt.Printf("%3d strings  %s  %s\n", f.StringCount, t, f.FileUri)
 		}
 	} else {
-		for _, f := range files {
-			fmt.Println(f.FileUri)
+		for _, f := range files.Items {
+			fmt.Println(f.FileURI)
 		}
 	}
 }

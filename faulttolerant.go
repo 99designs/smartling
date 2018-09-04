@@ -5,6 +5,8 @@ import (
 	"net"
 	"strings"
 	"time"
+
+	smartlingNew "github.com/Smartling/api-sdk-go"
 )
 
 func isResourceLockedError(err error) bool {
@@ -39,7 +41,8 @@ func isRetryableError(err error) bool {
 // FaultTolerantClient decorates a Client and retries
 // requests when Smartling returns with an error
 type FaultTolerantClient struct {
-	*Client
+	*smartlingNew.Client
+	ProjectID      string
 	RetriesOnError int
 }
 
@@ -70,15 +73,18 @@ func (c *FaultTolerantClient) Upload(localFilePath string, req *UploadRequest) (
 
 func (c *FaultTolerantClient) Get(req *GetRequest) (b []byte, err error) {
 	c.execWithRetry(func() error {
-		b, err = c.Client.Get(req)
-		return err
+		// c.Client.DownloadFile
+		// b, err = c.Client.Get(req)
+		// return err
+
+		return nil
 	})
 	return
 }
 
-func (c *FaultTolerantClient) List(req ListRequest) (ff []FileStatus, err error) {
+func (c *FaultTolerantClient) List(req ListRequest) (ff *smartlingNew.FilesList, err error) {
 	c.execWithRetry(func() error {
-		ff, err = c.Client.List(req)
+		ff, err = c.Client.ListFiles(c.ProjectID, smartlingNew.FilesListRequest{})
 		return err
 	})
 	return
@@ -86,30 +92,38 @@ func (c *FaultTolerantClient) List(req ListRequest) (ff []FileStatus, err error)
 
 func (c *FaultTolerantClient) Status(fileUri, locale string) (f FileStatus, err error) {
 	c.execWithRetry(func() error {
-		f, err = c.Client.Status(fileUri, locale)
-		return err
+		// f, err = c.Client.Status(fileUri, locale)
+		// return err
+		return nil
+
 	})
 	return
 }
 
 func (c *FaultTolerantClient) Rename(oldFileUri, newFileUri string) (err error) {
 	c.execWithRetry(func() error {
-		return c.Client.Rename(oldFileUri, newFileUri)
+		// return c.Client.Rename(oldFileUri, newFileUri)
+		return nil
+
 	})
 	return
 }
 
 func (c *FaultTolerantClient) Delete(fileUri string) (err error) {
 	c.execWithRetry(func() error {
-		return c.Client.Delete(fileUri)
+		// return c.Client.Delete(fileUri)
+		return nil
+
 	})
 	return
 }
 
 func (c *FaultTolerantClient) LastModified(req LastModifiedRequest) (ii []LastModifiedItem, err error) {
 	c.execWithRetry(func() error {
-		ii, err = c.Client.LastModified(req)
-		return err
+		// ii, err = c.Client.LastModified(req)
+		// return err
+		return nil
+
 	})
 	return
 }
