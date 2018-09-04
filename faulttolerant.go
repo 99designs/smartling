@@ -111,9 +111,8 @@ func (c *FaultTolerantClient) Rename(oldFileUri, newFileUri string) (err error) 
 
 func (c *FaultTolerantClient) Delete(fileUri string) (err error) {
 	c.execWithRetry(func() error {
-		// return c.Client.Delete(fileUri)
-		return nil
-
+		err = c.Client.DeleteFile(c.ProjectID, fileUri)
+		return err
 	})
 	return
 }
