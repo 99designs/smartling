@@ -103,9 +103,8 @@ func (c *FaultTolerantClient) Status(fileUri, locale string) (f FileStatus, err 
 
 func (c *FaultTolerantClient) Rename(oldFileUri, newFileUri string) (err error) {
 	c.execWithRetry(func() error {
-		// return c.Client.Rename(oldFileUri, newFileUri)
-		return nil
-
+		err = c.Client.RenameFile(c.ProjectID, oldFileUri, newFileUri)
+		return err
 	})
 	return
 }

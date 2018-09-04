@@ -217,18 +217,19 @@ var PutCommand = cli.Command{
 var RenameCommand = cli.Command{
 	Name:        "rename",
 	Usage:       "renames a remote file",
-	Description: "rename <remote file> <new smartling file>",
+	Description: "rename <remote file name> <new smartling file name>",
 	Before:      cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 2 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: rename <remote file> <new smartling file>")
+			log.Fatalln("Usage: rename <remote file> <new smartling file name>")
 		}
 
 		remotepath := c.Args().Get(0)
-		newremotepath := c.Args().Get(0)
+		newremotepath := c.Args().Get(1)
 
 		err := client.Rename(remotepath, newremotepath)
+
 		logAndQuitIfError(err)
 	},
 }
