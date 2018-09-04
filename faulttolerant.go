@@ -1,6 +1,8 @@
 package smartling
 
 import (
+	"bytes"
+	"io"
 	"log"
 	"net"
 	"strings"
@@ -38,6 +40,12 @@ func isRetryableError(err error) bool {
 	return isResourceLockedError(err) || isNetworkErrClosing(err) || isTimeoutError(err)
 }
 
+func streamToByte(stream io.Reader) []byte {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(stream)
+	return buf.Bytes()
+}
+
 // FaultTolerantClient decorates a Client and retries
 // requests when Smartling returns with an error
 type FaultTolerantClient struct {
@@ -72,13 +80,22 @@ func (c *FaultTolerantClient) Upload(req *smartlingNew.FileUploadRequest) (r *sm
 	return
 }
 
-func (c *FaultTolerantClient) Get(req *GetRequest) (b []byte, err error) {
+func (c *FaultTolerantClient) Download(fileURI string) (b []byte, err error) {
 	c.execWithRetry(func() error {
-		// c.Client.DownloadFile
-		// b, err = c.Client.Get(req)
-		// return err
+		var r io.Reader
+		r, err = c.Client.DownloadFile(c.ProjectID, fileURI)
+		b = streamToByte(r)
+		return err
+	})
+	return
+}
 
-		return nil
+func (c *FaultTolerantClient) DownloadTranslation(locale string, req smartlingNew.FileDownloadRequest) (b []byte, err error) {
+	c.execWithRetry(func() error {
+		var r io.Reader
+		r, err = c.Client.DownloadTranslation(c.ProjectID, locale, req)
+		b = streamToByte(r)
+		return err
 	})
 	return
 }

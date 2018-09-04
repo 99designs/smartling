@@ -145,11 +145,20 @@ var GetCommand = cli.Command{
 		}
 
 		remotepath := c.Args().Get(0)
+		locale := c.String("locale")
 
-		b, err := client.Get(&smartling.GetRequest{
-			FileUri: remotepath,
-			Locale:  c.String("locale"),
-		})
+		var (
+			b   []byte
+			err error
+		)
+
+		if locale == "" {
+			b, err = client.Download(remotepath)
+		} else {
+			b, err = client.DownloadTranslation(locale, smartlingNew.FileDownloadRequest{
+				FileURIRequest: smartlingNew.FileURIRequest{FileURI: remotepath},
+			})
+		}
 		logAndQuitIfError(err)
 
 		fmt.Println(string(b))

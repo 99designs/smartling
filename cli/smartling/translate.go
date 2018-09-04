@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/99designs/smartling"
+	smartlingNew "github.com/Smartling/api-sdk-go"
 )
 
 var cachePath = findCachePath()
@@ -115,9 +115,8 @@ func findIdenticalRemoteFileOrPush(projectFilepath, prefix string) string {
 func translateViaSmartling(projectFilepath, prefix, locale string) (b []byte, err error) {
 	remotePath := findIdenticalRemoteFileOrPush(projectFilepath, prefix)
 
-	b, err = client.Get(&smartling.GetRequest{
-		FileUri: remotePath,
-		Locale:  locale,
+	b, err = client.DownloadTranslation(locale, smartlingNew.FileDownloadRequest{
+		FileURIRequest: smartlingNew.FileURIRequest{FileURI: remotePath},
 	})
 
 	fmt.Println("Downloaded", remotePath)
