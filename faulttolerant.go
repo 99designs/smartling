@@ -100,9 +100,9 @@ func (c *FaultTolerantClient) DownloadTranslation(locale string, req smartlingNe
 	return
 }
 
-func (c *FaultTolerantClient) List(req ListRequest) (ff *smartlingNew.FilesList, err error) {
+func (c *FaultTolerantClient) List(req smartlingNew.FilesListRequest) (ff *smartlingNew.FilesList, err error) {
 	c.execWithRetry(func() error {
-		ff, err = c.Client.ListFiles(c.ProjectID, smartlingNew.FilesListRequest{})
+		ff, err = c.Client.ListFiles(c.ProjectID, req)
 		return err
 	})
 	return

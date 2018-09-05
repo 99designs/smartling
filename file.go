@@ -140,52 +140,9 @@ func (c *Client) Get(req *GetRequest) ([]byte, error) {
 	return ioutil.ReadAll(response.Body)
 }
 
-type ListCondition string
-
-const (
-	HaveAtLeastOneUnapproved ListCondition = "haveAtLeastOneUnapproved"
-	HaveAtLeastOneApproved   ListCondition = "haveAtLeastOneApproved"
-	HaveAtLeastOneTranslated ListCondition = "haveAtLeastOneTranslated"
-	HaveAllTranslated        ListCondition = "haveAllTranslated"
-	HaveAllApproved          ListCondition = "haveAllApproved"
-	HaveAllUnapproved        ListCondition = "haveAllUnapproved"
-)
-
-type ListRequest struct {
-	Locale             string          `url:"locale,omitempty"`
-	UriMask            string          `url:"uriMask,omitempty"`
-	FileTypes          []FileType      `url:"fileTypes,omitempty"`
-	LastUploadedAfter  *Iso8601Time    `url:"lastUploadedAfter,omitempty"`
-	LastUploadedBefore *Iso8601Time    `url:"lastUploadedBefore,omitempty"`
-	Offset             int             `url:"offset,omitempty"`
-	Limit              int             `url:"limit,omitempty"`
-	Conditions         []ListCondition `url:"conditions,omitempty"`
-	OrderBy            string          `url:"orderBy,omitempty"`
-}
-
-type ListResponse struct {
-	FileCount int          `json:"fileCount"`
-	Files     []FileStatus `json:"fileList"`
-}
-
-func (c *Client) List(req ListRequest) ([]FileStatus, error) {
-	r := ListResponse{}
-	err := c.doRequestAndUnmarshalData("/file/list", req, &r)
-
-	return r.Files, err
-}
-
 type statusRequest struct {
 	FileUri string `url:"fileUri"`
 	Locale  string `url:"locale"`
-}
-
-func (c *Client) Status(fileUri, locale string) (FileStatus, error) {
-	req := statusRequest{fileUri, locale}
-	r := FileStatus{}
-	err := c.doRequestAndUnmarshalData("/file/status", req, &r)
-
-	return r, err
 }
 
 type renameRequest struct {

@@ -43,7 +43,7 @@ var prefixFlag = cli.StringFlag{
 
 func fetchRemoteFileList() stringSlice {
 	files := stringSlice{}
-	listFiles, err := client.List(smartling.ListRequest{})
+	listFiles, err := client.List(smartlingNew.FilesListRequest{})
 	logAndQuitIfError(err)
 
 	for _, fs := range listFiles.Items {
@@ -265,6 +265,7 @@ func projectFileRemoteName(projectFilepath, prefix string) string {
 func pushProjectFile(projectFilepath, prefix string) string {
 	remoteFile := projectFileRemoteName(projectFilepath, prefix)
 
+	// FIXME: get this working
 	// _, err := client.Upload(projectFilepath, &smartling.UploadRequest{
 	// 	s.FileUri:    remoteFile,
 	// 	FileType:     filetypeForProjectFile(projectFilepath),

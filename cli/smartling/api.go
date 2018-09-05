@@ -13,13 +13,14 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func ListConditionSlice(cc []string) []smartling.ListCondition {
-	ll := []smartling.ListCondition{}
-	for _, c := range cc {
-		ll = append(ll, smartling.ListCondition(c))
-	}
-	return ll
-}
+// FIXME: support conditions on list
+// func ListConditionSlice(cc []string) []smartlingNew.FilesListRequest {
+// 	ll := []smartlingNew.ListCondition{}
+// 	for _, c := range cc {
+// 		ll = append(ll, smartling.ListCondition(c))
+// 	}
+// 	return ll
+// }
 
 func removeEmptyStrings(ss []string) []string {
 	newSs := []string{}
@@ -32,22 +33,25 @@ func removeEmptyStrings(ss []string) []string {
 }
 
 func PrintList(uriMask string, olderThan time.Duration, long bool, conditions []string) {
-	req := smartling.ListRequest{
-		UriMask: uriMask,
+	req := smartlingNew.FilesListRequest{
+		URIMask: uriMask,
 	}
-	conditions = removeEmptyStrings(conditions)
-	if len(conditions) > 0 {
-		req.Conditions = ListConditionSlice(conditions)
-	}
+
+	// FIXME: support conditions on list
+	// conditions = removeEmptyStrings(conditions)
+	// if len(conditions) > 0 {
+	// 	req.Conditions = ListConditionSlice(conditions)
+	// }
 	if olderThan > 0 {
-		t := smartling.Iso8601Time(time.Now().Add(-olderThan))
-		req.LastUploadedBefore = &t
+		// FIXME: check this actually works
+		t := smartlingNew.UTC{Time: time.Now().Add(-olderThan)}
+		req.LastUploadedBefore = t
 	}
 
 	files, err := client.List(req)
 	logAndQuitIfError(err)
 
-	// TODO: fix this "long"
+	// FIXME: fix this "long"
 	if long {
 		fmt.Println("total", files.TotalCount)
 		for _, f := range files.Items {
