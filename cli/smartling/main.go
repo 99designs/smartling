@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -25,25 +26,40 @@ func logAndQuitIfError(err error) {
 
 var cmdBefore = func(c *cli.Context) error {
 	// Things needed to authenticate
-	// hardcode for now - TODO: read this from config!!
 	userID := "xwyqmlfcrppcrkuoefevlobxoatals"
-	secretToken := "###"
-	projectID := "09bd710ee" // contests
+	apiKey := c.GlobalString("apikey")
+	projectID := c.GlobalString("projectid")
+	configFile := c.GlobalString("configfile")
+	// timeout := c.GlobalInt("timeout") // FIXME: use the timeout?
 
-	// files, err := client.ListFiles(projectID, smartlingNew.FilesListRequest{})
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return err
-	// }
-	// log.Printf("Found %v files", files.TotalCount)
+	if configFile == "" {
+		configFile = "smartling.yml"
+	}
 
-	// for _, f := range files.Items {
-	// 	log.Printf("%v", f.FileURI)
-	// }
+	var err error
+	ProjectConfig, err = loadConfig(configFile)
+	if err != nil {
+		loadProjectErr = fmt.Errorf("Error loading %s: %s", configFile, err.Error())
+	}
 
-	// TODO: sandbox client, what?
-	sc := smartlingNew.NewClient(userID, secretToken)
+	if ProjectConfig != nil {
+		if apiKey == "" {
+			apiKey = ProjectConfig.ApiKey
+		}
+		if projectID == "" {
+			projectID = ProjectConfig.ProjectId
+		}
+	}
 
+	if apiKey == "" {
+		log.Fatalln("ApiKey not specified in --apikey or", configFile)
+	}
+	if projectID == "" {
+		log.Fatalln("ProjectId not specified in --projectid or", configFile)
+	}
+
+	sc := smartlingNew.NewClient(userID, apiKey)
+	// FIXME: should projectID be passed to this fualttolerent client? probs not
 	client = &smartling.FaultTolerantClient{sc, projectID, 10}
 
 	return nil
