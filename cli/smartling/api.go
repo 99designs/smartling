@@ -110,6 +110,7 @@ func PrintFileStatus(remotepath, locale string) {
 	fmt.Println("Word Count              ", f.TotalWordCount)
 	fmt.Println("Authorized String Count ", f.AuthorizedStringCount)
 	fmt.Println("Completed String Count  ", f.CompletedStringCount)
+	fmt.Println("Excluded String Count   ", f.ExcludedStringCount)
 	fmt.Println("Last Uploaded           ", f.LastUploaded)
 	fmt.Println("File Type               ", f.FileType)
 }

@@ -15,8 +15,9 @@ type FileStatusExtended struct {
 	TotalWordCount        int
 }
 
+// TODO: do these live here?
 func (fs FileStatusExtended) AwaitingAuthorizationStringCount() int {
-	return fs.TotalStringCount - fs.AuthorizedStringCount
+	return fs.TotalStringCount - fs.AuthorizedStringCount - fs.ExcludedStringCount - fs.CompletedStringCount
 }
 
 func (fs FileStatusExtended) InProgressStringCount() int {
