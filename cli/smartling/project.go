@@ -66,11 +66,11 @@ func getRemoteFileList() stringSlice {
 
 func fetchLocales() []string {
 	ll := []string{}
-	// locales, err := client.Locales()
-	// logAndQuitIfError(err)
-	// for _, l := range locales {
-	// 	ll = append(ll, l.Locale)
-	// }
+	locales, err := client.Locales()
+	logAndQuitIfError(err)
+	for _, l := range locales {
+		ll = append(ll, l.LocaleID)
+	}
 
 	return ll
 }

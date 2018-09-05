@@ -142,3 +142,13 @@ func (c *FaultTolerantClient) LastModified(req LastModifiedRequest) (ii []LastMo
 	})
 	return
 }
+
+func (c *FaultTolerantClient) Locales() (tl []smartlingNew.Locale, err error) {
+	c.execWithRetry(func() error {
+		var pd *smartlingNew.ProjectDetails
+		pd, err = c.Client.GetProjectDetails(c.ProjectID)
+		tl = pd.TargetLocales
+		return err
+	})
+	return
+}
