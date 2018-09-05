@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/99designs/smartling"
+	smartlingNew "github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
@@ -198,11 +199,12 @@ func prefixOrGitPrefix(prefix string) string {
 
 type RemoteFileStatus struct {
 	RemoteFilePath string
-	Statuses       map[string]*smartling.FileStatus
+	Statuses       map[string]*smartlingNew.FileStatusExtended
 }
 
 func (r *RemoteFileStatus) NotCompletedStringCount() int {
 	c := 0
+
 	for _, fs := range r.Statuses {
 		c += fs.NotCompletedStringCount()
 	}
@@ -212,7 +214,7 @@ func (r *RemoteFileStatus) NotCompletedStringCount() int {
 func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileStatus {
 	ss := RemoteFileStatus{
 		RemoteFilePath: remoteFilePath,
-		Statuses:       map[string]*smartling.FileStatus{},
+		Statuses:       map[string]*smartlingNew.FileStatusExtended{},
 	}
 
 	var wg sync.WaitGroup
@@ -223,7 +225,7 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 
 			s, err := client.Status(f, l)
 			logAndQuitIfError(err)
-			ss.Statuses[l] = &s
+			ss.Statuses[l] = s
 
 		}(remoteFilePath, locale)
 	}

@@ -163,28 +163,6 @@ type ListRequest struct {
 	OrderBy            string          `url:"orderBy,omitempty"`
 }
 
-type FileStatus struct {
-	FileUri              string      `json:"fileUri"`
-	StringCount          int         `json:"stringCount"`
-	WordCount            int         `json:"wordCount"`
-	ApprovedStringCount  int         `json:"approvedStringCount"`
-	CompletedStringCount int         `json:"completedStringCount"`
-	LastUploaded         Iso8601Time `json:"lastUploaded"`
-	FileType             FileType    `json:"fileType"`
-}
-
-func (fs FileStatus) AwaitingAuthorizationStringCount() int {
-	return fs.StringCount - fs.ApprovedStringCount
-}
-
-func (fs FileStatus) InProgressStringCount() int {
-	return fs.NotCompletedStringCount() - fs.AwaitingAuthorizationStringCount()
-}
-
-func (fs FileStatus) NotCompletedStringCount() int {
-	return fs.StringCount - fs.CompletedStringCount
-}
-
 type ListResponse struct {
 	FileCount int          `json:"fileCount"`
 	Files     []FileStatus `json:"fileList"`

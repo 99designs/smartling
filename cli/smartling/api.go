@@ -98,16 +98,16 @@ var LsCommand = cli.Command{
 }
 
 func PrintFileStatus(remotepath, locale string) {
-	r, err := client.Status(remotepath, locale)
+	f, err := client.Status(remotepath, locale)
 	logAndQuitIfError(err)
 
-	fmt.Println("File                  ", r.FileUri)
-	fmt.Println("String Count          ", r.StringCount)
-	fmt.Println("Word Count            ", r.WordCount)
-	fmt.Println("Approved String Count ", r.ApprovedStringCount)
-	fmt.Println("Completed String Count", r.CompletedStringCount)
-	fmt.Println("Last Uploaded         ", r.LastUploaded)
-	fmt.Println("File Type             ", r.FileType)
+	fmt.Println("File                    ", f.FileURI)
+	fmt.Println("String Count            ", f.TotalStringCount)
+	fmt.Println("Word Count              ", f.TotalWordCount)
+	fmt.Println("Authorized String Count ", f.AuthorizedStringCount)
+	fmt.Println("Completed String Count  ", f.CompletedStringCount)
+	fmt.Println("Last Uploaded           ", f.LastUploaded)
+	fmt.Println("File Type               ", f.FileType)
 }
 
 var StatusCommand = cli.Command{

@@ -108,11 +108,10 @@ func (c *FaultTolerantClient) List(req ListRequest) (ff *smartlingNew.FilesList,
 	return
 }
 
-func (c *FaultTolerantClient) Status(fileUri, locale string) (f FileStatus, err error) {
+func (c *FaultTolerantClient) Status(fileUri, locale string) (f *smartlingNew.FileStatusExtended, err error) {
 	c.execWithRetry(func() error {
-		// f, err = c.Client.Status(fileUri, locale)
-		// return err
-		return nil
+		f, err = c.Client.GetFileStatusExtended(c.ProjectID, fileUri, locale)
+		return err
 
 	})
 	return
