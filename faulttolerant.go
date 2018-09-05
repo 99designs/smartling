@@ -133,6 +133,7 @@ func (c *FaultTolerantClient) Delete(fileUri string) (err error) {
 	return
 }
 
+// FIXME
 func (c *FaultTolerantClient) LastModified(req LastModifiedRequest) (ii []LastModifiedItem, err error) {
 	c.execWithRetry(func() error {
 		// ii, err = c.Client.LastModified(req)
