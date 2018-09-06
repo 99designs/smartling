@@ -209,9 +209,7 @@ var PutCommand = cli.Command{
 		}
 
 		f, err := ioutil.ReadFile(localpath)
-		if err != nil {
-			logAndQuitIfError(err)
-		}
+		logAndQuitIfError(err)
 
 		r, err := client.Upload(&smartlingNew.FileUploadRequest{
 			File:           f,

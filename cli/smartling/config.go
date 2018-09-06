@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/99designs/smartling"
+	smartlingNew "github.com/Smartling/api-sdk-go"
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,13 +23,13 @@ var defaultPullDestination = "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}"
 
 type Config struct {
 	path         string
-	ApiKey       string             `yaml:"ApiKey"`
-	ProjectId    string             `yaml:"ProjectId"`
-	CacheMaxAge  string             `yaml:"CacheMaxAge"`
-	FileGlobs    []string           `yaml:"Files"`
-	FileType     smartling.FileType `yaml:"FileType"`
-	ParserConfig map[string]string  `yaml:"ParserConfig"`
-	PullFilePath string             `yaml:"PullFilePath"`
+	ApiKey       string                `yaml:"ApiKey"`
+	ProjectId    string                `yaml:"ProjectId"`
+	CacheMaxAge  string                `yaml:"CacheMaxAge"`
+	FileGlobs    []string              `yaml:"Files"`
+	FileType     smartlingNew.FileType `yaml:"FileType"`
+	ParserConfig map[string]string     `yaml:"ParserConfig"`
+	PullFilePath string                `yaml:"PullFilePath"`
 	hasGlobbed   bool
 	files        []string
 }

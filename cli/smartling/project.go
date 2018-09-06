@@ -11,7 +11,6 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/99designs/smartling"
 	smartlingNew "github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
@@ -142,24 +141,24 @@ var projectPullCommand = cli.Command{
 }
 
 func pullAllProjectFiles(prefix string) {
-	// locales, err := client.Locales()
-	// logAndQuitIfError(err)
+	locales, err := client.Locales()
+	logAndQuitIfError(err)
 
-	// // do this first to cache result and prevent races in the goroutines
-	// _ = getRemoteFileList()
+	// do this first to cache result and prevent races in the goroutines
+	_ = getRemoteFileList()
 
-	// var wg sync.WaitGroup
-	// for _, projectFilepath := range ProjectConfig.Files() {
-	// 	for _, l := range locales {
-	// 		wg.Add(1)
-	// 		go func(locale, projectFilepath string) {
-	// 			defer wg.Done()
+	var wg sync.WaitGroup
+	for _, projectFilepath := range ProjectConfig.Files() {
+		for _, l := range locales {
+			wg.Add(1)
+			go func(locale, projectFilepath string) {
+				defer wg.Done()
 
-	// 			pullProjectFile(projectFilepath, locale, prefix)
-	// 		}(l.Locale, projectFilepath)
-	// 	}
-	// }
-	// wg.Wait()
+				pullProjectFile(projectFilepath, locale, prefix)
+			}(l.LocaleID, projectFilepath)
+		}
+	}
+	wg.Wait()
 }
 
 func pullProjectFile(projectFilepath, locale, prefix string) {
@@ -262,16 +261,23 @@ func projectFileRemoteName(projectFilepath, prefix string) string {
 	return path.Clean("/" + remoteFile)
 }
 
+func readFile(projectFilepath string) []byte {
+	f, err := ioutil.ReadFile(projectFilepath)
+	logAndQuitIfError(err)
+	return f
+}
+
 func pushProjectFile(projectFilepath, prefix string) string {
 	remoteFile := projectFileRemoteName(projectFilepath, prefix)
 
-	// FIXME: get this working
-	// _, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-	// 	s.FileUri:    remoteFile,
-	// 	FileType:     filetypeForProjectFile(projectFilepath),
-	// 	ParserConfig: ProjectConfig.ParserConfig,
-	// })
-	// logAndQuitIfError(err)
+	req := &smartlingNew.FileUploadRequest{
+		FileURIRequest: smartlingNew.FileURIRequest{FileURI: remoteFile},
+		FileType:       filetypeForProjectFile(projectFilepath),
+		File:           readFile(projectFilepath),
+	}
+	req.Smartling.Directives = ProjectConfig.ParserConfig
+	_, err := client.Upload(req)
+	logAndQuitIfError(err)
 
 	fmt.Println("Uploaded", remoteFile)
 	return remoteFile
@@ -312,8 +318,8 @@ func pushAllProjectFiles(prefix string) {
 	}
 }
 
-func filetypeForProjectFile(projectFilepath string) smartling.FileType {
-	ft := smartling.FileTypeByExtension(path.Ext(projectFilepath))
+func filetypeForProjectFile(projectFilepath string) smartlingNew.FileType {
+	ft := smartlingNew.GetFileTypeByExtension(path.Ext(projectFilepath))
 	if ft == "" {
 		ft = ProjectConfig.FileType
 	}
