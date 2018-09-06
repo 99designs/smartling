@@ -13,8 +13,8 @@ import (
 
 func isResourceLockedError(err error) bool {
 	if err != nil {
-		if sErr, ok := err.(SmartlingResponse); ok {
-			return sErr.IsResourceLockedError()
+		if sErr, ok := err.(smartlingNew.APIError); ok {
+			return sErr.Code == "RESOURCE_LOCKED"
 		}
 	}
 	return false
