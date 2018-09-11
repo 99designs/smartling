@@ -26,7 +26,7 @@ func logAndQuitIfError(err error) {
 
 var cmdBefore = func(c *cli.Context) error {
 	// Things needed to authenticate
-	userID := "xwyqmlfcrppcrkuoefevlobxoatals"
+	userID := c.GlobalString("userid")
 	apiKey := c.GlobalString("apikey")
 	projectID := c.GlobalString("projectid")
 	configFile := c.GlobalString("configfile")
@@ -59,7 +59,7 @@ var cmdBefore = func(c *cli.Context) error {
 	}
 
 	sc := smartlingNew.NewClient(userID, apiKey)
-	// FIXME: should projectID be passed to this fualttolerent client? probs not
+	// FIXME: should projectID be passed to this faulttolerent client? probs not
 	client = &smartling.FaultTolerantClient{sc, projectID, 10}
 
 	return nil
