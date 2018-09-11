@@ -65,55 +65,6 @@ var cmdBefore = func(c *cli.Context) error {
 	return nil
 }
 
-// var cmdBeforeOld = func(c *cli.Context) error {
-// 	apiKey := c.GlobalString("apikey")
-// 	projectId := c.GlobalString("projectid")
-// 	configFile := c.GlobalString("configfile")
-// 	timeout := c.GlobalInt("timeout")
-
-// 	if configFile == "" {
-// 		configFile = "smartling.yml"
-// 	}
-
-// 	var err error
-// 	ProjectConfig, err = loadConfig(configFile)
-// 	if err != nil {
-// 		loadProjectErr = fmt.Errorf("Error loading %s: %s", configFile, err.Error())
-// 	}
-
-// 	if ProjectConfig != nil {
-// 		if apiKey == "" {
-// 			apiKey = ProjectConfig.ApiKey
-// 		}
-// 		if projectId == "" {
-// 			projectId = ProjectConfig.ProjectId
-// 		}
-// 	}
-
-// 	if apiKey == "" {
-// 		log.Fatalln("ApiKey not specified in --apikey or", configFile)
-// 	}
-// 	if projectId == "" {
-// 		log.Fatalln("ProjectId not specified in --projectid or", configFile)
-// 	}
-
-// 	var sc *smartling.Client
-// 	if c.Bool("sandbox") {
-// 		log.Println("Using sandbox")
-// 		sc = smartling.NewSandboxClient(apiKey, projectId)
-// 	} else {
-// 		sc = smartling.NewClient(apiKey, projectId)
-// 	}
-
-// 	if timeout != 0 {
-// 		sc.SetHttpTimeout(time.Duration(timeout) * time.Second)
-// 	}
-
-// 	client = &smartling.FaultTolerantClient{sc, 10}
-
-// 	return nil
-// }
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "smartling"
