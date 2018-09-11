@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/99designs/smartling"
 	smartlingNew "github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
@@ -276,14 +275,14 @@ var LastmodifiedCommand = cli.Command{
 
 		remotepath := c.Args().Get(0)
 
-		items, err := client.LastModified(smartling.LastModifiedRequest{
-			FileUri: remotepath,
+		locales, err := client.LastModified(smartlingNew.FileLastModifiedRequest{
+			FileURIRequest: smartlingNew.FileURIRequest{FileURI: remotepath},
 		})
 		logAndQuitIfError(err)
 
-		for _, i := range items {
-			t := time.Time(i.LastModified).Format("2 Jan 3:04")
-			fmt.Printf("%s %s\n", i.Locale, t)
+		for _, i := range locales.Items {
+			t := time.Time(i.LastModified.Time).Format("2 Jan 3:04")
+			fmt.Printf("%s %s\n", i.LocaleID, t)
 		}
 	},
 }
