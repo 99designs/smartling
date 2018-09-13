@@ -24,7 +24,6 @@ func logAndQuitIfError(err error) {
 }
 
 var cmdBefore = func(c *cli.Context) error {
-	// Things needed to authenticate
 	userID := c.GlobalString("userid")
 	apiKey := c.GlobalString("apikey")
 	projectID := c.GlobalString("projectid")
@@ -45,7 +44,10 @@ var cmdBefore = func(c *cli.Context) error {
 			apiKey = ProjectConfig.ApiKey
 		}
 		if projectID == "" {
-			projectID = ProjectConfig.ProjectId
+			projectID = ProjectConfig.ProjectID
+		}
+		if userID == "" {
+			userID = ProjectConfig.UserID
 		}
 	}
 
@@ -53,11 +55,14 @@ var cmdBefore = func(c *cli.Context) error {
 		log.Fatalln("ApiKey not specified in --apikey or", configFile)
 	}
 	if projectID == "" {
-		log.Fatalln("ProjectId not specified in --projectid or", configFile)
+		log.Fatalln("ProjectID not specified in --projectid or", configFile)
+	}
+	if userID == "" {
+		log.Fatalln("UserID not specified in --userid or", configFile)
 	}
 
 	sc := smartling.NewClient(userID, apiKey)
-	// FIXME: should projectID be passed to this faulttolerent client? probs not
+
 	client = &FaultTolerantClient{sc, projectID, 10}
 
 	return nil
@@ -80,6 +85,10 @@ func main() {
 			Name:   "apikey, k",
 			Usage:  "Smartling ApiKey",
 			EnvVar: "SMARTLING_APIKEY",
+		}, cli.StringFlag{
+			Name:   "userid, u",
+			Usage:  "Smartling User Identifier",
+			EnvVar: "SMARTLING_USERID",
 		}, cli.StringFlag{
 			Name:   "projectid, p",
 			Usage:  "Smartling Project ID",

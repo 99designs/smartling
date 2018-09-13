@@ -24,7 +24,8 @@ var defaultPullDestination = "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}"
 type Config struct {
 	path         string
 	ApiKey       string             `yaml:"ApiKey"`
-	ProjectId    string             `yaml:"ProjectId"`
+	UserID       string             `yaml:"UserId"`
+	ProjectID    string             `yaml:"ProjectId"`
 	CacheMaxAge  string             `yaml:"CacheMaxAge"`
 	FileGlobs    []string           `yaml:"Files"`
 	FileType     smartling.FileType `yaml:"FileType"`
