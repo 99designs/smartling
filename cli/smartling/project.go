@@ -11,7 +11,7 @@ import (
 	"sync"
 	"text/template"
 
-	smartlingNew "github.com/Smartling/api-sdk-go"
+	"github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
@@ -42,7 +42,7 @@ var prefixFlag = cli.StringFlag{
 
 func fetchRemoteFileList() stringSlice {
 	files := stringSlice{}
-	listFiles, err := client.List(smartlingNew.FilesListRequest{})
+	listFiles, err := client.List(smartling.FilesListRequest{})
 	logAndQuitIfError(err)
 
 	for _, fs := range listFiles.Items {
@@ -198,7 +198,7 @@ func prefixOrGitPrefix(prefix string) string {
 
 type RemoteFileStatus struct {
 	RemoteFilePath string
-	Statuses       map[string]*smartlingNew.FileStatusExtended
+	Statuses       map[string]*smartling.FileStatusExtended
 }
 
 func (r *RemoteFileStatus) NotCompletedStringCount() int {
@@ -213,7 +213,7 @@ func (r *RemoteFileStatus) NotCompletedStringCount() int {
 func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileStatus {
 	ss := RemoteFileStatus{
 		RemoteFilePath: remoteFilePath,
-		Statuses:       map[string]*smartlingNew.FileStatusExtended{},
+		Statuses:       map[string]*smartling.FileStatusExtended{},
 	}
 
 	var wg sync.WaitGroup
@@ -270,8 +270,8 @@ func readFile(projectFilepath string) []byte {
 func pushProjectFile(projectFilepath, prefix string) string {
 	remoteFile := projectFileRemoteName(projectFilepath, prefix)
 
-	req := &smartlingNew.FileUploadRequest{
-		FileURIRequest: smartlingNew.FileURIRequest{FileURI: remoteFile},
+	req := &smartling.FileUploadRequest{
+		FileURIRequest: smartling.FileURIRequest{FileURI: remoteFile},
 		FileType:       filetypeForProjectFile(projectFilepath),
 		File:           readFile(projectFilepath),
 	}
@@ -318,8 +318,8 @@ func pushAllProjectFiles(prefix string) {
 	}
 }
 
-func filetypeForProjectFile(projectFilepath string) smartlingNew.FileType {
-	ft := smartlingNew.GetFileTypeByExtension(path.Ext(projectFilepath))
+func filetypeForProjectFile(projectFilepath string) smartling.FileType {
+	ft := smartling.GetFileTypeByExtension(path.Ext(projectFilepath))
 	if ft == "" {
 		ft = ProjectConfig.FileType
 	}

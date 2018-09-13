@@ -1,4 +1,4 @@
-package smartling
+package main
 
 import (
 	"bytes"
@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	smartlingNew "github.com/Smartling/api-sdk-go"
+	"github.com/Smartling/api-sdk-go"
 )
 
 func isResourceLockedError(err error) bool {
 	if err != nil {
-		if sErr, ok := err.(smartlingNew.APIError); ok {
+		if sErr, ok := err.(smartling.APIError); ok {
 			return sErr.Code == "RESOURCE_LOCKED"
 		}
 	}
@@ -49,7 +49,7 @@ func streamToByte(stream io.Reader) []byte {
 // FaultTolerantClient decorates a Client and retries
 // requests when Smartling returns with an error
 type FaultTolerantClient struct {
-	*smartlingNew.Client
+	*smartling.Client
 	ProjectID      string
 	RetriesOnError int
 }
@@ -71,7 +71,7 @@ func (c *FaultTolerantClient) execWithRetry(f func() error) {
 	}
 }
 
-func (c *FaultTolerantClient) Upload(req *smartlingNew.FileUploadRequest) (r *smartlingNew.FileUploadResult, err error) {
+func (c *FaultTolerantClient) Upload(req *smartling.FileUploadRequest) (r *smartling.FileUploadResult, err error) {
 	c.execWithRetry(func() error {
 		r, err = c.Client.UploadFile(c.ProjectID, *req)
 
@@ -90,7 +90,7 @@ func (c *FaultTolerantClient) Download(fileURI string) (b []byte, err error) {
 	return
 }
 
-func (c *FaultTolerantClient) DownloadTranslation(locale string, req smartlingNew.FileDownloadRequest) (b []byte, err error) {
+func (c *FaultTolerantClient) DownloadTranslation(locale string, req smartling.FileDownloadRequest) (b []byte, err error) {
 	c.execWithRetry(func() error {
 		var r io.Reader
 		r, err = c.Client.DownloadTranslation(c.ProjectID, locale, req)
@@ -100,7 +100,7 @@ func (c *FaultTolerantClient) DownloadTranslation(locale string, req smartlingNe
 	return
 }
 
-func (c *FaultTolerantClient) List(req smartlingNew.FilesListRequest) (ff *smartlingNew.FilesList, err error) {
+func (c *FaultTolerantClient) List(req smartling.FilesListRequest) (ff *smartling.FilesList, err error) {
 	c.execWithRetry(func() error {
 		ff, err = c.Client.ListFiles(c.ProjectID, req)
 		return err
@@ -108,7 +108,7 @@ func (c *FaultTolerantClient) List(req smartlingNew.FilesListRequest) (ff *smart
 	return
 }
 
-func (c *FaultTolerantClient) Status(fileUri, locale string) (f *smartlingNew.FileStatusExtended, err error) {
+func (c *FaultTolerantClient) Status(fileUri, locale string) (f *smartling.FileStatusExtended, err error) {
 	c.execWithRetry(func() error {
 		f, err = c.Client.GetFileStatusExtended(c.ProjectID, fileUri, locale)
 		return err
@@ -133,7 +133,7 @@ func (c *FaultTolerantClient) Delete(fileUri string) (err error) {
 	return
 }
 
-func (c *FaultTolerantClient) LastModified(req smartlingNew.FileLastModifiedRequest) (f *smartlingNew.FileLastModifiedLocales, err error) {
+func (c *FaultTolerantClient) LastModified(req smartling.FileLastModifiedRequest) (f *smartling.FileLastModifiedLocales, err error) {
 	c.execWithRetry(func() error {
 		f, err = c.Client.LastModified(c.ProjectID, req)
 
@@ -142,9 +142,9 @@ func (c *FaultTolerantClient) LastModified(req smartlingNew.FileLastModifiedRequ
 	return
 }
 
-func (c *FaultTolerantClient) Locales() (tl []smartlingNew.Locale, err error) {
+func (c *FaultTolerantClient) Locales() (tl []smartling.Locale, err error) {
 	c.execWithRetry(func() error {
-		var pd *smartlingNew.ProjectDetails
+		var pd *smartling.ProjectDetails
 		pd, err = c.Client.GetProjectDetails(c.ProjectID)
 
 		if err != nil {

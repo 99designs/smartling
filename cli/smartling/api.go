@@ -8,18 +8,18 @@ import (
 	"strings"
 	"time"
 
-	smartlingNew "github.com/Smartling/api-sdk-go"
+	"github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
 func PrintList(uriMask string, olderThan time.Duration, long bool) {
-	req := smartlingNew.FilesListRequest{
+	req := smartling.FilesListRequest{
 		URIMask: uriMask,
 	}
 
 	if olderThan > 0 {
 		// FIXME: check this actually works
-		t := smartlingNew.UTC{Time: time.Now().Add(-olderThan)}
+		t := smartling.UTC{Time: time.Now().Add(-olderThan)}
 		req.LastUploadedBefore = t
 	}
 
@@ -131,8 +131,8 @@ var GetCommand = cli.Command{
 		if locale == "" {
 			b, err = client.Download(remotepath)
 		} else {
-			b, err = client.DownloadTranslation(locale, smartlingNew.FileDownloadRequest{
-				FileURIRequest: smartlingNew.FileURIRequest{FileURI: remotepath},
+			b, err = client.DownloadTranslation(locale, smartling.FileDownloadRequest{
+				FileURIRequest: smartling.FileURIRequest{FileURI: remotepath},
 			})
 		}
 		logAndQuitIfError(err)
@@ -163,9 +163,9 @@ var PutCommand = cli.Command{
 
 		localpath := c.Args().Get(0)
 
-		ft := smartlingNew.FileType(c.String("filetype"))
+		ft := smartling.FileType(c.String("filetype"))
 		if ft == "" {
-			ft = smartlingNew.GetFileTypeByExtension(filepath.Ext(localpath))
+			ft = smartling.GetFileTypeByExtension(filepath.Ext(localpath))
 		}
 
 		parserconfig := map[string]string{}
@@ -182,11 +182,11 @@ var PutCommand = cli.Command{
 		f, err := ioutil.ReadFile(localpath)
 		logAndQuitIfError(err)
 
-		r, err := client.Upload(&smartlingNew.FileUploadRequest{
+		r, err := client.Upload(&smartling.FileUploadRequest{
 			File:           f,
 			FileType:       ft,
 			Authorize:      c.Bool("approve"),
-			FileURIRequest: smartlingNew.FileURIRequest{FileURI: localpath},
+			FileURIRequest: smartling.FileURIRequest{FileURI: localpath},
 		})
 
 		logAndQuitIfError(err)
@@ -247,8 +247,8 @@ var LastmodifiedCommand = cli.Command{
 
 		remotepath := c.Args().Get(0)
 
-		locales, err := client.LastModified(smartlingNew.FileLastModifiedRequest{
-			FileURIRequest: smartlingNew.FileURIRequest{FileURI: remotepath},
+		locales, err := client.LastModified(smartling.FileLastModifiedRequest{
+			FileURIRequest: smartling.FileURIRequest{FileURI: remotepath},
 		})
 		logAndQuitIfError(err)
 

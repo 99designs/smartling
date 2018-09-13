@@ -6,10 +6,10 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	smartlingNew "github.com/Smartling/api-sdk-go"
+	"github.com/Smartling/api-sdk-go"
 )
 
-func mustStatus(remotefile, locale string) smartlingNew.FileStatusExtended {
+func mustStatus(remotefile, locale string) smartling.FileStatusExtended {
 	fs, err := client.Status(remotefile, locale)
 	logAndQuitIfError(err)
 
@@ -18,22 +18,22 @@ func mustStatus(remotefile, locale string) smartlingNew.FileStatusExtended {
 
 type ProjectStatus struct {
 	sync.RWMutex
-	statuses map[string]map[string]smartlingNew.FileStatusExtended
+	statuses map[string]map[string]smartling.FileStatusExtended
 }
 
 func New() *ProjectStatus {
 	return &ProjectStatus{
-		statuses: make(map[string]map[string]smartlingNew.FileStatusExtended),
+		statuses: make(map[string]map[string]smartling.FileStatusExtended),
 	}
 }
 
-func (ps *ProjectStatus) Add(remotefile, locale string, fs smartlingNew.FileStatusExtended) {
+func (ps *ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatusExtended) {
 	ps.Lock()
 	defer ps.Unlock()
 
 	_, ok := ps.statuses[remotefile]
 	if !ok {
-		mm := make(map[string]smartlingNew.FileStatusExtended)
+		mm := make(map[string]smartling.FileStatusExtended)
 		ps.statuses[remotefile] = mm
 	}
 	ps.statuses[remotefile][locale] = fs

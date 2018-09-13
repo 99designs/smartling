@@ -5,12 +5,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/99designs/smartling"
-	smartlingNew "github.com/Smartling/api-sdk-go"
+	"github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
-var client *smartling.FaultTolerantClient
+var client *FaultTolerantClient
 
 var Version = "dev"
 
@@ -57,9 +56,9 @@ var cmdBefore = func(c *cli.Context) error {
 		log.Fatalln("ProjectId not specified in --projectid or", configFile)
 	}
 
-	sc := smartlingNew.NewClient(userID, apiKey)
+	sc := smartling.NewClient(userID, apiKey)
 	// FIXME: should projectID be passed to this faulttolerent client? probs not
-	client = &smartling.FaultTolerantClient{sc, projectID, 10}
+	client = &FaultTolerantClient{sc, projectID, 10}
 
 	return nil
 }
