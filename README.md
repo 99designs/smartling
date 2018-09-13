@@ -1,28 +1,13 @@
 # Smartling
 
-A client implementation of the [Smartling Translation API](https://docs.smartling.com/display/docs/Smartling+Translation+API) in Go.
+A CLI tool implementation of the [Smartling Translation API](https://developer.smartling.com/docs/list-of-smartling-apis) in Go.
 
-It consists of a library for use in other projects, and a CLI tool.
-
-## Using the Library
-
-You can find documentation at http://godoc.org/github.com/99designs/smartling
-
-```go
-import "github.com/99designs/smartling"
-
-client := smartling.NewClient(apiKey, projectId)
-client.List(smartling.ListRequest{
-    Limit: 20,
-})
-```
-
-## CLI tool
+## Using the CLI tool
 
 The `smartling` CLI tool provides a familiar unix-like command interface to the Smartling API, as well as providing a `project` command to manage a project's local files.
 
-Install it with `go get github.com/99designs/smartling/cli/smartling`  
-*or*  
+Install it with `go get github.com/99designs/smartling/cli/smartling`
+*or*
 run it as a docker container `docker run --rm -v MyProject:/work 99designs/smartling ls`
 
 
@@ -69,7 +54,8 @@ The CLI tool uses a project level config file called `smartling.yml` for configu
 Example config:
 ```yaml
 # Required config
-ApiKey: "11111111-2222-3333-4444-555555555555"             # Smartling API Key
+ApiKey: "aaaaaabbbbbbbbcccccddddddd"                       # Smartling API Token Secret token
+UserID: "a1b2c3d4e5f6"                                     # Smartling User Identifier
 ProjectId: "666666666"                                     # Smartling Project Id
 Files:                                                     # Files in the project
   - translations/*.xlf                                     # Globbing can be used,

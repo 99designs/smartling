@@ -18,8 +18,7 @@ func PrintList(uriMask string, olderThan time.Duration) {
 	}
 
 	if olderThan > 0 {
-		t := smartling.UTC{Time: time.Now().Add(-olderThan)}
-		req.LastUploadedBefore = t
+		req.LastUploadedBefore = smartling.UTC{Time: time.Now().Add(-olderThan)}
 	}
 
 	files, err := client.List(req)
