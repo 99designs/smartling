@@ -12,35 +12,11 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-// FIXME: support conditions on list
-// func ListConditionSlice(cc []string) []smartlingNew.FilesListRequest {
-// 	ll := []smartlingNew.ListCondition{}
-// 	for _, c := range cc {
-// 		ll = append(ll, smartling.ListCondition(c))
-// 	}
-// 	return ll
-// }
-
-func removeEmptyStrings(ss []string) []string {
-	newSs := []string{}
-	for _, s := range ss {
-		if s != "" {
-			newSs = append(newSs, s)
-		}
-	}
-	return newSs
-}
-
-func PrintList(uriMask string, olderThan time.Duration, long bool, conditions []string) {
+func PrintList(uriMask string, olderThan time.Duration, long bool) {
 	req := smartlingNew.FilesListRequest{
 		URIMask: uriMask,
 	}
 
-	// FIXME: support conditions on list
-	// conditions = removeEmptyStrings(conditions)
-	// if len(conditions) > 0 {
-	// 	req.Conditions = ListConditionSlice(conditions)
-	// }
 	if olderThan > 0 {
 		// FIXME: check this actually works
 		t := smartlingNew.UTC{Time: time.Now().Add(-olderThan)}
@@ -72,8 +48,6 @@ var LsCommand = cli.Command{
 	Description: "ls [<uriMask>]",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name: "conditions",
-		}, cli.StringFlag{
 			Name: "older-than",
 		}, cli.BoolFlag{
 			Name: "long,l",
@@ -94,9 +68,7 @@ var LsCommand = cli.Command{
 			logAndQuitIfError(err)
 		}
 
-		conditions := strings.Split(c.String("conditions"), ",")
-
-		PrintList(uriMask, d, c.Bool("long"), conditions)
+		PrintList(uriMask, d, c.Bool("long"))
 	},
 }
 
