@@ -12,13 +12,12 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-func PrintList(uriMask string, olderThan time.Duration, long bool) {
+func PrintList(uriMask string, olderThan time.Duration) {
 	req := smartling.FilesListRequest{
 		URIMask: uriMask,
 	}
 
 	if olderThan > 0 {
-		// FIXME: check this actually works
 		t := smartling.UTC{Time: time.Now().Add(-olderThan)}
 		req.LastUploadedBefore = t
 	}
@@ -26,19 +25,8 @@ func PrintList(uriMask string, olderThan time.Duration, long bool) {
 	files, err := client.List(req)
 	logAndQuitIfError(err)
 
-	// FIXME: fix this "long"
-	if long {
-		fmt.Println("total", files.TotalCount)
-		for _, f := range files.Items {
-			// t := time.Time(f.LastUploaded).Format("2 Jan 15:04")
-			fmt.Println(f.FileURI)
-
-			// fmt.Printf("%3d strings  %s  %s\n", f.StringCount, t, f.FileUri)
-		}
-	} else {
-		for _, f := range files.Items {
-			fmt.Println(f.FileURI)
-		}
+	for _, f := range files.Items {
+		fmt.Println(f.FileURI)
 	}
 }
 
@@ -49,8 +37,6 @@ var LsCommand = cli.Command{
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: "older-than",
-		}, cli.BoolFlag{
-			Name: "long,l",
 		},
 	},
 	Before: cmdBefore,
@@ -68,7 +54,7 @@ var LsCommand = cli.Command{
 			logAndQuitIfError(err)
 		}
 
-		PrintList(uriMask, d, c.Bool("long"))
+		PrintList(uriMask, d)
 	},
 }
 
