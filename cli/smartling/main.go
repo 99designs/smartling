@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
@@ -28,6 +29,7 @@ var cmdBefore = func(c *cli.Context) error {
 	apiKey := c.GlobalString("apikey")
 	projectID := c.GlobalString("projectid")
 	configFile := c.GlobalString("configfile")
+	timeout := c.GlobalInt("timeout")
 
 	if configFile == "" {
 		configFile = "smartling.yml"
@@ -63,6 +65,10 @@ var cmdBefore = func(c *cli.Context) error {
 
 	sc := smartling.NewClient(userID, apiKey)
 
+	if timeout != 0 {
+		sc.HTTP.Timeout = (time.Duration(timeout) * time.Second)
+	}
+
 	client = &FaultTolerantClient{sc, projectID, 10}
 
 	return nil
@@ -97,6 +103,11 @@ func main() {
 			Name:   "configfile,c",
 			Usage:  "Project config file to use",
 			EnvVar: "SMARTLING_CONFIGFILE",
+		}, cli.IntFlag{
+			Name:   "timeout,t",
+			Value:  60,
+			Usage:  "Maximum time in seconds for an API request to take",
+			EnvVar: "SMARTLING_API_TIMEOUT",
 		},
 
 		cli.VersionFlag,
