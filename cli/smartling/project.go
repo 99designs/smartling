@@ -11,7 +11,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/99designs/smartling"
+	"github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
@@ -42,11 +42,11 @@ var prefixFlag = cli.StringFlag{
 
 func fetchRemoteFileList() stringSlice {
 	files := stringSlice{}
-	listFiles, err := client.List(smartling.ListRequest{})
+	listFiles, err := client.List(smartling.FilesListRequest{})
 	logAndQuitIfError(err)
 
-	for _, fs := range listFiles {
-		files = append(files, fs.FileUri)
+	for _, fs := range listFiles.Items {
+		files = append(files, fs.FileURI)
 	}
 
 	return files
@@ -68,7 +68,7 @@ func fetchLocales() []string {
 	locales, err := client.Locales()
 	logAndQuitIfError(err)
 	for _, l := range locales {
-		ll = append(ll, l.Locale)
+		ll = append(ll, l.LocaleID)
 	}
 
 	return ll
@@ -155,7 +155,7 @@ func pullAllProjectFiles(prefix string) {
 				defer wg.Done()
 
 				pullProjectFile(projectFilepath, locale, prefix)
-			}(l.Locale, projectFilepath)
+			}(l.LocaleID, projectFilepath)
 		}
 	}
 	wg.Wait()
@@ -198,11 +198,12 @@ func prefixOrGitPrefix(prefix string) string {
 
 type RemoteFileStatus struct {
 	RemoteFilePath string
-	Statuses       map[string]*smartling.FileStatus
+	Statuses       map[string]*smartling.FileStatusExtended
 }
 
 func (r *RemoteFileStatus) NotCompletedStringCount() int {
 	c := 0
+
 	for _, fs := range r.Statuses {
 		c += fs.NotCompletedStringCount()
 	}
@@ -212,7 +213,7 @@ func (r *RemoteFileStatus) NotCompletedStringCount() int {
 func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileStatus {
 	ss := RemoteFileStatus{
 		RemoteFilePath: remoteFilePath,
-		Statuses:       map[string]*smartling.FileStatus{},
+		Statuses:       map[string]*smartling.FileStatusExtended{},
 	}
 
 	var wg sync.WaitGroup
@@ -223,7 +224,7 @@ func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileSt
 
 			s, err := client.Status(f, l)
 			logAndQuitIfError(err)
-			ss.Statuses[l] = &s
+			ss.Statuses[l] = s
 
 		}(remoteFilePath, locale)
 	}
@@ -260,14 +261,22 @@ func projectFileRemoteName(projectFilepath, prefix string) string {
 	return path.Clean("/" + remoteFile)
 }
 
+func readFile(projectFilepath string) []byte {
+	f, err := ioutil.ReadFile(projectFilepath)
+	logAndQuitIfError(err)
+	return f
+}
+
 func pushProjectFile(projectFilepath, prefix string) string {
 	remoteFile := projectFileRemoteName(projectFilepath, prefix)
 
-	_, err := client.Upload(projectFilepath, &smartling.UploadRequest{
-		FileUri:      remoteFile,
-		FileType:     filetypeForProjectFile(projectFilepath),
-		ParserConfig: ProjectConfig.ParserConfig,
-	})
+	req := &smartling.FileUploadRequest{
+		FileURIRequest: smartling.FileURIRequest{FileURI: remoteFile},
+		FileType:       filetypeForProjectFile(projectFilepath),
+		File:           readFile(projectFilepath),
+	}
+	req.Smartling.Directives = ProjectConfig.ParserConfig
+	_, err := client.Upload(req)
 	logAndQuitIfError(err)
 
 	fmt.Println("Uploaded", remoteFile)
@@ -310,7 +319,7 @@ func pushAllProjectFiles(prefix string) {
 }
 
 func filetypeForProjectFile(projectFilepath string) smartling.FileType {
-	ft := smartling.FileTypeByExtension(path.Ext(projectFilepath))
+	ft := smartling.GetFileTypeByExtension(path.Ext(projectFilepath))
 	if ft == "" {
 		ft = ProjectConfig.FileType
 	}

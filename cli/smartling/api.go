@@ -2,59 +2,30 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/99designs/smartling"
+	"github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
-func ListConditionSlice(cc []string) []smartling.ListCondition {
-	ll := []smartling.ListCondition{}
-	for _, c := range cc {
-		ll = append(ll, smartling.ListCondition(c))
+func PrintList(uriMask string, olderThan time.Duration) {
+	req := smartling.FilesListRequest{
+		URIMask: uriMask,
 	}
-	return ll
-}
 
-func removeEmptyStrings(ss []string) []string {
-	newSs := []string{}
-	for _, s := range ss {
-		if s != "" {
-			newSs = append(newSs, s)
-		}
-	}
-	return newSs
-}
-
-func PrintList(uriMask string, olderThan time.Duration, long bool, conditions []string) {
-	req := smartling.ListRequest{
-		UriMask: uriMask,
-	}
-	conditions = removeEmptyStrings(conditions)
-	if len(conditions) > 0 {
-		req.Conditions = ListConditionSlice(conditions)
-	}
 	if olderThan > 0 {
-		t := smartling.Iso8601Time(time.Now().Add(-olderThan))
-		req.LastUploadedBefore = &t
+		req.LastUploadedBefore = smartling.UTC{Time: time.Now().Add(-olderThan)}
 	}
 
 	files, err := client.List(req)
 	logAndQuitIfError(err)
 
-	if long {
-		fmt.Println("total", len(files))
-		for _, f := range files {
-			t := time.Time(f.LastUploaded).Format("2 Jan 15:04")
-			fmt.Printf("%3d strings  %s  %s\n", f.StringCount, t, f.FileUri)
-		}
-	} else {
-		for _, f := range files {
-			fmt.Println(f.FileUri)
-		}
+	for _, f := range files.Items {
+		fmt.Println(f.FileURI)
 	}
 }
 
@@ -64,11 +35,7 @@ var LsCommand = cli.Command{
 	Description: "ls [<uriMask>]",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name: "conditions",
-		}, cli.StringFlag{
 			Name: "older-than",
-		}, cli.BoolFlag{
-			Name: "long,l",
 		},
 	},
 	Before: cmdBefore,
@@ -86,23 +53,22 @@ var LsCommand = cli.Command{
 			logAndQuitIfError(err)
 		}
 
-		conditions := strings.Split(c.String("conditions"), ",")
-
-		PrintList(uriMask, d, c.Bool("long"), conditions)
+		PrintList(uriMask, d)
 	},
 }
 
 func PrintFileStatus(remotepath, locale string) {
-	r, err := client.Status(remotepath, locale)
+	f, err := client.Status(remotepath, locale)
 	logAndQuitIfError(err)
 
-	fmt.Println("File                  ", r.FileUri)
-	fmt.Println("String Count          ", r.StringCount)
-	fmt.Println("Word Count            ", r.WordCount)
-	fmt.Println("Approved String Count ", r.ApprovedStringCount)
-	fmt.Println("Completed String Count", r.CompletedStringCount)
-	fmt.Println("Last Uploaded         ", r.LastUploaded)
-	fmt.Println("File Type             ", r.FileType)
+	fmt.Println("File                    ", f.FileURI)
+	fmt.Println("String Count            ", f.TotalStringCount)
+	fmt.Println("Word Count              ", f.TotalWordCount)
+	fmt.Println("Authorized String Count ", f.AuthorizedStringCount)
+	fmt.Println("Completed String Count  ", f.CompletedStringCount)
+	fmt.Println("Excluded String Count   ", f.ExcludedStringCount)
+	fmt.Println("Last Uploaded           ", f.LastUploaded)
+	fmt.Println("File Type               ", f.FileType)
 }
 
 var StatusCommand = cli.Command{
@@ -140,11 +106,20 @@ var GetCommand = cli.Command{
 		}
 
 		remotepath := c.Args().Get(0)
+		locale := c.String("locale")
 
-		b, err := client.Get(&smartling.GetRequest{
-			FileUri: remotepath,
-			Locale:  c.String("locale"),
-		})
+		var (
+			b   []byte
+			err error
+		)
+
+		if locale == "" {
+			b, err = client.Download(remotepath)
+		} else {
+			b, err = client.DownloadTranslation(locale, smartling.FileDownloadRequest{
+				FileURIRequest: smartling.FileURIRequest{FileURI: remotepath},
+			})
+		}
 		logAndQuitIfError(err)
 
 		fmt.Println(string(b))
@@ -154,7 +129,7 @@ var GetCommand = cli.Command{
 var PutCommand = cli.Command{
 	Name:        "put",
 	Usage:       "uploads a local file",
-	Description: "put <local file> <remote file>",
+	Description: "put <local file>",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: "filetype",
@@ -166,17 +141,16 @@ var PutCommand = cli.Command{
 	},
 	Before: cmdBefore,
 	Action: func(c *cli.Context) {
-		if len(c.Args()) != 2 {
+		if len(c.Args()) != 1 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: put <local file> <remote file>")
+			log.Fatalln("Usage: put <local file>")
 		}
 
 		localpath := c.Args().Get(0)
-		remotepath := c.Args().Get(1)
 
 		ft := smartling.FileType(c.String("filetype"))
 		if ft == "" {
-			ft = smartling.FileTypeByExtension(filepath.Ext(localpath))
+			ft = smartling.GetFileTypeByExtension(filepath.Ext(localpath))
 		}
 
 		parserconfig := map[string]string{}
@@ -190,15 +164,19 @@ var PutCommand = cli.Command{
 			}
 		}
 
-		r, err := client.Upload(localpath, &smartling.UploadRequest{
-			FileUri:      remotepath,
-			FileType:     ft,
-			ParserConfig: parserconfig,
-			Approved:     c.Bool("approve"),
-		})
+		f, err := ioutil.ReadFile(localpath)
 		logAndQuitIfError(err)
 
-		fmt.Println("Overwritten: ", r.OverWritten)
+		r, err := client.Upload(&smartling.FileUploadRequest{
+			File:           f,
+			FileType:       ft,
+			Authorize:      c.Bool("approve"),
+			FileURIRequest: smartling.FileURIRequest{FileURI: localpath},
+		})
+
+		logAndQuitIfError(err)
+
+		fmt.Println("Overwritten: ", r.Overwritten)
 		fmt.Println("String Count:", r.StringCount)
 		fmt.Println("Word Count:  ", r.WordCount)
 	},
@@ -207,18 +185,19 @@ var PutCommand = cli.Command{
 var RenameCommand = cli.Command{
 	Name:        "rename",
 	Usage:       "renames a remote file",
-	Description: "rename <remote file> <new smartling file>",
+	Description: "rename <remote file name> <new smartling file name>",
 	Before:      cmdBefore,
 	Action: func(c *cli.Context) {
 		if len(c.Args()) != 2 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: rename <remote file> <new smartling file>")
+			log.Fatalln("Usage: rename <remote file> <new smartling file name>")
 		}
 
 		remotepath := c.Args().Get(0)
-		newremotepath := c.Args().Get(0)
+		newremotepath := c.Args().Get(1)
 
 		err := client.Rename(remotepath, newremotepath)
+
 		logAndQuitIfError(err)
 	},
 }
@@ -253,14 +232,14 @@ var LastmodifiedCommand = cli.Command{
 
 		remotepath := c.Args().Get(0)
 
-		items, err := client.LastModified(smartling.LastModifiedRequest{
-			FileUri: remotepath,
+		locales, err := client.LastModified(smartling.FileLastModifiedRequest{
+			FileURIRequest: smartling.FileURIRequest{FileURI: remotepath},
 		})
 		logAndQuitIfError(err)
 
-		for _, i := range items {
-			t := time.Time(i.LastModified).Format("2 Jan 3:04")
-			fmt.Printf("%s %s\n", i.Locale, t)
+		for _, i := range locales.Items {
+			t := time.Time(i.LastModified.Time).Format("2 Jan 3:04")
+			fmt.Printf("%s %s\n", i.LocaleID, t)
 		}
 	},
 }
@@ -275,11 +254,13 @@ var LocalesCommand = cli.Command{
 			log.Fatalln("Usage: locales")
 		}
 
-		r, err := client.Locales()
+		tl, err := client.Locales()
 		logAndQuitIfError(err)
 
-		for _, l := range r {
-			fmt.Printf("%-5s  %-23s  %s\n", l.Locale, l.Name, l.Translated)
+		for _, l := range tl {
+			if l.Enabled {
+				fmt.Printf("%-5s  %s\n", l.LocaleID, l.Description)
+			}
 		}
 	},
 }

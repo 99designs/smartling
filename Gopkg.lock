@@ -2,26 +2,36 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:8ca91a64fcc2433e6e932ab4b637ee3f078f14e446cdf536eba768617ac0ff9b"
+  name = "github.com/Smartling/api-sdk-go"
+  packages = ["."]
+  pruneopts = ""
+  revision = "3bec778d06c8c195b74a7a1152ed92254416f58f"
+
+[[projects]]
+  digest = "1:6cd26dec5142a0e6a6bf8931df56b706cb643bf7f91fb3a064792f07fea94704"
   name = "github.com/codegangsta/cli"
   packages = ["."]
+  pruneopts = ""
   revision = "0bdeddeeb0f650497d603c4ad7b20cfe685682f6"
   version = "v1.19.1"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/google/go-querystring"
-  packages = ["query"]
-  revision = "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
-
-[[projects]]
   branch = "v2"
+  digest = "1:f776026dedad7a9fef3c65180084620ca3684a87a177f5da8837755a1f8fa4fd"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
+  pruneopts = ""
   revision = "25c4ec802a7d637f88d584ab26798e94ad14c13b"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f75b2dd133070e372f1265572086ca6d43f087e3926a217c567583a4173b674e"
+  input-imports = [
+    "github.com/Smartling/api-sdk-go",
+    "github.com/codegangsta/cli",
+    "gopkg.in/yaml.v2",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

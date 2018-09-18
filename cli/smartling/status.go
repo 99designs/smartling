@@ -6,34 +6,34 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/99designs/smartling"
+	"github.com/Smartling/api-sdk-go"
 )
 
-func MustStatus(remotefile, locale string) smartling.FileStatus {
+func mustStatus(remotefile, locale string) smartling.FileStatusExtended {
 	fs, err := client.Status(remotefile, locale)
 	logAndQuitIfError(err)
 
-	return fs
+	return *fs
 }
 
 type ProjectStatus struct {
 	sync.RWMutex
-	statuses map[string]map[string]smartling.FileStatus
+	statuses map[string]map[string]smartling.FileStatusExtended
 }
 
 func New() *ProjectStatus {
 	return &ProjectStatus{
-		statuses: make(map[string]map[string]smartling.FileStatus),
+		statuses: make(map[string]map[string]smartling.FileStatusExtended),
 	}
 }
 
-func (ps *ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatus) {
+func (ps *ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatusExtended) {
 	ps.Lock()
 	defer ps.Unlock()
 
 	_, ok := ps.statuses[remotefile]
 	if !ok {
-		mm := make(map[string]smartling.FileStatus)
+		mm := make(map[string]smartling.FileStatusExtended)
 		ps.statuses[remotefile] = mm
 	}
 	ps.statuses[remotefile][locale] = fs
@@ -60,7 +60,7 @@ func (ps *ProjectStatus) TotalStringsCount() int {
 	c := 0
 	for _, s := range ps.statuses {
 		for _, status := range s {
-			c += status.StringCount
+			c += status.TotalStringCount
 			break
 		}
 	}
@@ -79,7 +79,7 @@ func GetProjectStatus(prefix string, locales []string) *ProjectStatus {
 			wg.Add(1)
 			go func(remotefile, locale string) {
 				defer wg.Done()
-				statuses.Add(remotefile, locale, MustStatus(remotefile, locale))
+				statuses.Add(remotefile, locale, mustStatus(remotefile, locale))
 			}(remoteFilePath, l)
 		}
 	}

@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/99designs/smartling"
+	"github.com/Smartling/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
-var client *smartling.FaultTolerantClient
+var client *FaultTolerantClient
 
 var Version = "dev"
 
@@ -25,8 +25,9 @@ func logAndQuitIfError(err error) {
 }
 
 var cmdBefore = func(c *cli.Context) error {
+	userID := c.GlobalString("userid")
 	apiKey := c.GlobalString("apikey")
-	projectId := c.GlobalString("projectid")
+	projectID := c.GlobalString("projectid")
 	configFile := c.GlobalString("configfile")
 	timeout := c.GlobalInt("timeout")
 
@@ -44,31 +45,31 @@ var cmdBefore = func(c *cli.Context) error {
 		if apiKey == "" {
 			apiKey = ProjectConfig.ApiKey
 		}
-		if projectId == "" {
-			projectId = ProjectConfig.ProjectId
+		if projectID == "" {
+			projectID = ProjectConfig.ProjectID
+		}
+		if userID == "" {
+			userID = ProjectConfig.UserID
 		}
 	}
 
 	if apiKey == "" {
 		log.Fatalln("ApiKey not specified in --apikey or", configFile)
 	}
-	if projectId == "" {
-		log.Fatalln("ProjectId not specified in --projectid or", configFile)
+	if projectID == "" {
+		log.Fatalln("ProjectID not specified in --projectid or", configFile)
+	}
+	if userID == "" {
+		log.Fatalln("UserID not specified in --userid or", configFile)
 	}
 
-	var sc *smartling.Client
-	if c.Bool("sandbox") {
-		log.Println("Using sandbox")
-		sc = smartling.NewSandboxClient(apiKey, projectId)
-	} else {
-		sc = smartling.NewClient(apiKey, projectId)
-	}
+	sc := smartling.NewClient(userID, apiKey)
 
 	if timeout != 0 {
-		sc.SetHttpTimeout(time.Duration(timeout) * time.Second)
+		sc.HTTP.Timeout = (time.Duration(timeout) * time.Second)
 	}
 
-	client = &smartling.FaultTolerantClient{sc, 10}
+	client = &FaultTolerantClient{sc, projectID, 10}
 
 	return nil
 }
@@ -91,13 +92,13 @@ func main() {
 			Usage:  "Smartling ApiKey",
 			EnvVar: "SMARTLING_APIKEY",
 		}, cli.StringFlag{
+			Name:   "userid, u",
+			Usage:  "Smartling User Identifier",
+			EnvVar: "SMARTLING_USERID",
+		}, cli.StringFlag{
 			Name:   "projectid, p",
 			Usage:  "Smartling Project ID",
 			EnvVar: "SMARTLING_PROJECTID",
-		}, cli.BoolFlag{
-			Name:   "sandbox",
-			Usage:  "Use the sandbox",
-			EnvVar: "SMARTLING_SANDBOX",
 		}, cli.StringFlag{
 			Name:   "configfile,c",
 			Usage:  "Project config file to use",
