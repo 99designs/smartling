@@ -21,7 +21,7 @@ func (client *Client) GetFileStatusExtended(
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"failed to get files list: %s", err,
+			"failed to get file status: %s", err,
 		)
 	}
 
