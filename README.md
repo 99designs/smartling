@@ -54,17 +54,17 @@ The CLI tool uses a project level config file called `smartling.yml` for configu
 Example config:
 ```yaml
 # Required config
-ApiKey: "aaaaaabbbbbbbbcccccddddddd"                       # Smartling API Token Secret token
-UserID: "a1b2c3d4e5f6"                                     # Smartling User Identifier
-ProjectId: "666666666"                                     # Smartling Project Id
-Files:                                                     # Files in the project
+api_key: "aaaaaabbbbbbbbcccccddddddd"                       # Smartling API Token Secret token
+user_id: "a1b2c3d4e5f6"                                     # Smartling User Identifier
+project_id: "666666666"                                     # Smartling Project Id
+files:                                                     # Files in the project
   - translations/*.xlf                                     # Globbing can be used,
   - foo/bar.xlf                                            # as well as individual files
 
 # Optional config
-CacheMaxAge: "4h"                                          # How long to cache translated files for
-FileType: "xliff"                                          # Override the detected file type
-ParserConfig:                                              # Add a custom configuration
+cache_max_age: "4h"                                          # How long to cache translated files for
+file_type: "xliff"                                          # Override the detected file type
+parser_config:                                              # Add a custom configuration
   placeholder_format_custom: "%[^%]+%"
-PullFilePath: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}" # The naming scheme when pulling files
+pull_file_path: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}" # The naming scheme when pulling files
 ```

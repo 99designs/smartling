@@ -23,14 +23,14 @@ var defaultPullDestination = "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}"
 
 type Config struct {
 	path         string
-	ApiKey       string             `yaml:"ApiKey"`
-	UserID       string             `yaml:"UserId"`
-	ProjectID    string             `yaml:"ProjectId"`
-	CacheMaxAge  string             `yaml:"CacheMaxAge"`
-	FileGlobs    []string           `yaml:"Files"`
-	FileType     smartling.FileType `yaml:"FileType"`
-	ParserConfig map[string]string  `yaml:"ParserConfig"`
-	PullFilePath string             `yaml:"PullFilePath"`
+	ApiKey       string             `yaml:"api_key"`
+	UserID       string             `yaml:"user_id"`
+	ProjectID    string             `yaml:"project_id"`
+	CacheMaxAge  string             `yaml:"cache_max_age"`
+	FileGlobs    []string           `yaml:"files"`
+	FileType     smartling.FileType `yaml:"file_type"`
+	ParserConfig map[string]string  `yaml:"parser_config"`
+	PullFilePath string             `yaml:"pull_file_path"`
 	hasGlobbed   bool
 	files        []string
 }
