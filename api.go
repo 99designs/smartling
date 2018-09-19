@@ -65,6 +65,7 @@ func PrintFileStatus(remotepath, locale string) {
 
 	fmt.Println("File                    ", f.FileURI)
 	fmt.Println("String Count            ", f.TotalStringCount)
+	fmt.Println("Word Count              ", fst.AuthorizedWordCount+fst.CompletedWordCount)
 	fmt.Println("Authorized String Count ", fst.AuthorizedStringCount)
 	fmt.Println("Completed String Count  ", fst.CompletedStringCount)
 	fmt.Println("Excluded String Count   ", fst.ExcludedStringCount)
