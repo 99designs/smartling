@@ -129,7 +129,7 @@ var GetCommand = cli.Command{
 var PutCommand = cli.Command{
 	Name:        "put",
 	Usage:       "uploads a local file",
-	Description: "put <local file>",
+	Description: "put <local file> <remote file>",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name: "filetype",
@@ -141,12 +141,13 @@ var PutCommand = cli.Command{
 	},
 	Before: cmdBefore,
 	Action: func(c *cli.Context) {
-		if len(c.Args()) != 1 {
+		if len(c.Args()) != 2 {
 			log.Println("Wrong number of arguments")
-			log.Fatalln("Usage: put <local file>")
+			log.Fatalln("Usage: put <local file> <remote file>")
 		}
 
 		localpath := c.Args().Get(0)
+		remotepath := c.Args().Get(1)
 
 		ft := smartling.FileType(c.String("filetype"))
 		if ft == "" {
@@ -171,7 +172,7 @@ var PutCommand = cli.Command{
 			File:           f,
 			FileType:       ft,
 			Authorize:      c.Bool("approve"),
-			FileURIRequest: smartling.FileURIRequest{FileURI: localpath},
+			FileURIRequest: smartling.FileURIRequest{FileURI: remotepath},
 		})
 
 		logAndQuitIfError(err)
