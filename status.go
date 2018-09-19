@@ -6,7 +6,7 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/Smartling/api-sdk-go"
+	"github.com/99designs/api-sdk-go"
 )
 
 func mustStatus(remotefile string) smartling.FileStatus {

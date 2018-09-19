@@ -11,7 +11,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/Smartling/api-sdk-go"
+	"github.com/99designs/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
