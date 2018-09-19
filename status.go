@@ -9,8 +9,8 @@ import (
 	"github.com/Smartling/api-sdk-go"
 )
 
-func mustStatus(remotefile, locale string) smartling.FileStatusExtended {
-	fs, err := client.Status(remotefile, locale)
+func mustStatus(remotefile string) smartling.FileStatus {
+	fs, err := client.Status(remotefile)
 	logAndQuitIfError(err)
 
 	return *fs
@@ -18,51 +18,27 @@ func mustStatus(remotefile, locale string) smartling.FileStatusExtended {
 
 type ProjectStatus struct {
 	sync.RWMutex
-	statuses map[string]map[string]smartling.FileStatusExtended
+	statuses map[string]smartling.FileStatus
 }
 
 func New() *ProjectStatus {
 	return &ProjectStatus{
-		statuses: make(map[string]map[string]smartling.FileStatusExtended),
+		statuses: make(map[string]smartling.FileStatus),
 	}
-}
-
-func (ps *ProjectStatus) Add(remotefile, locale string, fs smartling.FileStatusExtended) {
-	ps.Lock()
-	defer ps.Unlock()
-
-	_, ok := ps.statuses[remotefile]
-	if !ok {
-		mm := make(map[string]smartling.FileStatusExtended)
-		ps.statuses[remotefile] = mm
-	}
-	ps.statuses[remotefile][locale] = fs
 }
 
 func (ps *ProjectStatus) AwaitingAuthorizationCount() int {
-	ps.RLock()
-	defer ps.RUnlock()
-
 	c := 0
 	for _, s := range ps.statuses {
-		for _, status := range s {
-			c += status.AwaitingAuthorizationStringCount()
-			break
-		}
+		c += s.AwaitingAuthorizationStringCount()
 	}
 	return c
 }
 
 func (ps *ProjectStatus) TotalStringsCount() int {
-	ps.RLock()
-	defer ps.RUnlock()
-
 	c := 0
 	for _, s := range ps.statuses {
-		for _, status := range s {
-			c += status.TotalStringCount
-			break
-		}
+		c += s.TotalStringCount
 	}
 
 	return c
@@ -75,13 +51,12 @@ func GetProjectStatus(prefix string, locales []string) *ProjectStatus {
 	for _, projectFilepath := range ProjectConfig.Files() {
 		remoteFilePath := findIdenticalRemoteFileOrPush(projectFilepath, prefix)
 
-		for _, l := range locales {
-			wg.Add(1)
-			go func(remotefile, locale string) {
-				defer wg.Done()
-				statuses.Add(remotefile, locale, mustStatus(remotefile, locale))
-			}(remoteFilePath, l)
-		}
+		wg.Add(1)
+		go func(remoteFile string) {
+			defer wg.Done()
+			fs := mustStatus(remoteFile)
+			statuses.statuses[remoteFile] = fs
+		}(remoteFilePath)
 	}
 	wg.Wait()
 
@@ -102,12 +77,17 @@ func PrintProjectStatusTable(ps *ProjectStatus, locales []string) {
 	for projectFilepath, _ := range ps.statuses {
 		aa := false
 		for _, locale := range locales {
-			status := ps.statuses[projectFilepath][locale]
+			status := ps.statuses[projectFilepath]
+			fst, err := status.GetFileStatusTranslation(locale)
+			if err != nil {
+				logAndQuitIfError(err)
+			}
 			if !aa {
-				fmt.Fprintf(w, "%7d", status.AwaitingAuthorizationStringCount())
+				fmt.Fprintf(w, "%7d", fst.AwaitingAuthorizationStringCount(status.TotalStringCount))
 				aa = true
 			}
-			fmt.Fprintf(w, "\t%3d->%-3d", status.InProgressStringCount(), status.CompletedStringCount)
+
+			fmt.Fprintf(w, "\t%3d->%-3d", fst.AuthorizedStringCount, fst.CompletedStringCount)
 		}
 		fmt.Fprint(w, "\t", projectFilepath, "\n")
 	}
