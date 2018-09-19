@@ -11,7 +11,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/Smartling/api-sdk-go"
+	"github.com/99designs/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
 
@@ -194,43 +194,6 @@ func prefixOrGitPrefix(prefix string) string {
 		log.Println("Using prefix", prefix)
 	}
 	return prefix
-}
-
-type RemoteFileStatus struct {
-	RemoteFilePath string
-	Statuses       map[string]*smartling.FileStatusExtended
-}
-
-func (r *RemoteFileStatus) NotCompletedStringCount() int {
-	c := 0
-
-	for _, fs := range r.Statuses {
-		c += fs.NotCompletedStringCount()
-	}
-	return c
-}
-
-func fetchStatusForLocales(remoteFilePath string, locales []string) RemoteFileStatus {
-	ss := RemoteFileStatus{
-		RemoteFilePath: remoteFilePath,
-		Statuses:       map[string]*smartling.FileStatusExtended{},
-	}
-
-	var wg sync.WaitGroup
-	for _, locale := range locales {
-		wg.Add(1)
-		go func(f, l string) {
-			defer wg.Done()
-
-			s, err := client.Status(f, l)
-			logAndQuitIfError(err)
-			ss.Statuses[l] = s
-
-		}(remoteFilePath, locale)
-	}
-	wg.Wait()
-
-	return ss
 }
 
 var projectPushCommand = cli.Command{

@@ -10,3 +10,7 @@ type FileStatusTranslation struct {
 	ExcludedStringCount   int
 	ExcludedWordCount     int
 }
+
+func (fst FileStatusTranslation) AwaitingAuthorizationStringCount(totalStringCount int) int {
+	return totalStringCount - fst.AuthorizedStringCount - fst.ExcludedStringCount - fst.CompletedStringCount
+}

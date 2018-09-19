@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Smartling/api-sdk-go"
+	"github.com/99designs/api-sdk-go"
 )
 
 func isResourceLockedError(err error) bool {
@@ -106,11 +106,10 @@ func (c *FaultTolerantClient) List(req smartling.FilesListRequest) (ff *smartlin
 	return
 }
 
-func (c *FaultTolerantClient) Status(fileUri, locale string) (f *smartling.FileStatusExtended, err error) {
+func (c *FaultTolerantClient) Status(fileUri string) (f *smartling.FileStatus, err error) {
 	c.execWithRetry(func() error {
-		f, err = c.Client.GetFileStatusExtended(c.ProjectID, fileUri, locale)
+		f, err = client.GetFileStatus(c.ProjectID, fileUri)
 		return err
-
 	})
 	return
 }

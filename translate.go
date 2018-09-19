@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Smartling/api-sdk-go"
+	"github.com/99designs/api-sdk-go"
 )
 
 var cachePath = findCachePath()

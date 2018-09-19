@@ -3,11 +3,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8ca91a64fcc2433e6e932ab4b637ee3f078f14e446cdf536eba768617ac0ff9b"
-  name = "github.com/Smartling/api-sdk-go"
+  digest = "1:674c1d05beba72cb233bfcea49624f0b584e4e53766a65f800a88b4795a04ff8"
+  name = "github.com/99designs/api-sdk-go"
   packages = ["."]
   pruneopts = ""
-  revision = "3bec778d06c8c195b74a7a1152ed92254416f58f"
+  revision = "621ccf0ab7a65876a0bff1839764db31486481b2"
 
 [[projects]]
   digest = "1:6cd26dec5142a0e6a6bf8931df56b706cb643bf7f91fb3a064792f07fea94704"
@@ -29,7 +29,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/Smartling/api-sdk-go",
+    "github.com/99designs/api-sdk-go",
     "github.com/codegangsta/cli",
     "gopkg.in/yaml.v2",
   ]
