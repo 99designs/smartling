@@ -6,10 +6,10 @@ A CLI tool implementation of the [Smartling Translation API](https://developer.s
 
 The `smartling` CLI tool provides a familiar unix-like command interface to the Smartling API, as well as providing a `project` command to manage a project's local files.
 
-Install it with `go get github.com/99designs/smartling/cli/smartling`
-*or*
-run it as a docker container `docker run --rm -v MyProject:/work 99designs/smartling ls`
-
+### Installing
+ - download from the releases page
+ - `go get github.com/99designs/smartling`
+ - run it as a docker container `docker run --rm -v MyProject:/work 99designs/smartling ls`
 
 ```
 COMMANDS:
@@ -41,7 +41,7 @@ COMMANDS:
 
 "Pulling" translates local project files using Smartling as a translation memory.
 
-Other cool features:
+Other features:
 - downloaded translation files are cached (default is 4 hours) in `~/.smartling/cache`
 - operations mostly happen concurrently
 - filetypes get detected automatically
