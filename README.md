@@ -11,6 +11,8 @@ The `smartling` CLI tool provides a familiar unix-like command interface to the 
  - `go get github.com/99designs/smartling`
  - run it as a docker container `docker run --rm -v MyProject:/work 99designs/smartling ls`
 
+### Usage
+
 ```
 COMMANDS:
    ls           list remote files
