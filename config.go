@@ -1,16 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
-	"strings"
 	"time"
+
+	"github.com/99designs/smartling/git"
 
 	"github.com/99designs/api-sdk-go"
 	"gopkg.in/yaml.v2"
@@ -59,18 +58,9 @@ func (c *Config) cacheMaxAge() time.Duration {
 	return time.Duration(4 * time.Hour)
 }
 
-func gitBranch() string {
-	cmd := exec.Command("git", "symbolic-ref", "--short", "HEAD")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	_ = cmd.Run()
-
-	return strings.TrimSpace(out.String())
-}
-
 func pushPrefix() string {
 	// prefer branch
-	b := gitBranch()
+	b := git.CurrentBranch()
 	if b != "" {
 		return "/branch/" + b
 	}
