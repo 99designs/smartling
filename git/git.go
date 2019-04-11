@@ -14,16 +14,16 @@ func Branch(args ...string) string {
 	return gitExecSubCommand("branch", args)
 }
 
-func MergedRemoteBranches() []string {
+func MergedRemoteBranches() map[string]string {
 	return RemoteBranches("--merged", "master")
 }
 
-func RemoteBranches(args ...string) []string {
+func RemoteBranches(args ...string) map[string]string {
 	defaultArgs := []string{"-r"}
 	allRemoteBranches := Branch(append(defaultArgs, args...)...)
 	branches := strings.Split(allRemoteBranches, "\n")
 
-	var result []string
+	result := map[string]string{}
 	for _, branchPath := range branches {
 		if strings.Contains(branchPath, "HEAD") || strings.Contains(branchPath, "master") {
 			continue
@@ -32,7 +32,7 @@ func RemoteBranches(args ...string) []string {
 		trimmed := strings.TrimSpace(branchPath)
 		branch := strings.Replace(trimmed, "origin/", "", 1)
 		if branch != "" {
-			result = append(result, branch)
+			result[branch] = branch
 		}
 	}
 	return result

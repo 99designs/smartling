@@ -11,6 +11,8 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/99designs/smartling/gc"
+
 	"github.com/99designs/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
@@ -31,6 +33,7 @@ var ProjectCommand = cli.Command{
 		projectStatusCommand,
 		projectPullCommand,
 		projectPushCommand,
+		projectGCCommand,
 	},
 }
 
@@ -337,4 +340,24 @@ func localPullFilePath(p, locale string) string {
 	logAndQuitIfError(err)
 
 	return localRelativeFilePath(out.String())
+}
+
+var projectGCCommand = cli.Command{
+	Name:  "gc",
+	Usage: "Collect garbage strings",
+	Flags: []cli.Flag{
+		prefixFlag,
+	},
+	Subcommands: []cli.Command{
+		{
+			Name:  "branch",
+			Usage: "Collect garbage strings for the current branch",
+			Action: func(c *cli.Context) error {
+				return gc.Branch()
+			},
+		},
+	},
+	Action: func(c *cli.Context) error {
+		return gc.Project()
+	},
 }
