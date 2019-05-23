@@ -1,30 +1,30 @@
-# the current tag else the current git sha
-VERSION := $(shell git tag --points-at=HEAD | grep . || git rev-parse --short HEAD)
-
-GOBUILD_ARGS := -ldflags "-X main.Version=$(VERSION)"
-OS := $(shell go env GOOS)
-ARCH := $(shell go env GOHOSTARCH)
+export GO111MODULE=on
+VERSION=$(shell git describe --tags --candidates=1 --dirty)
+FLAGS=-X main.Version=$(VERSION) -s -w
 
 # To create a new release:
 #  $ git tag vx.x.x
 #  $ git push --tags
 #  $ make clean
-#  $ make release     # this will create 2 binaries in ./bin - darwin and linux
+#  $ make release     # this will create 3 binaries in ./bin
 #
 #  Next, go to https://github.com/99designs/smartling/releases/new
 #  - select the tag version you just created
 #  - Attach the binaries from ./bin/*
 
-release: bin/smartling-linux-amd64 bin/smartling
-	gzip bin/*
+release: bin/smartling-linux-amd64 bin/smartling-darwin-amd64 bin/smartling-windows-386.exe
 
 bin/smartling-linux-amd64:
 	@mkdir -p bin
-	docker run -it -v $$GOPATH:/go library/golang go build $(GOBUILD_ARGS) -o /go/src/github.com/99designs/smartling/$@ github.com/99designs/smartling/
+	GOOS=linux GOARCH=amd64 go build -o $@ -ldflags="$(FLAGS)" .
 
-bin/smartling:
+bin/smartling-darwin-amd64:
 	@mkdir -p bin
-	go build $(GOBUILD_ARGS) -o bin/smartling-$(OS)-$(ARCH) .
+	GOOS=darwin GOARCH=amd64 go build -o $@ -ldflags="$(FLAGS)" .
+
+bin/smartling-windows-386.exe:
+	@mkdir -p bin
+	GOOS=windows GOARCH=386 go build -o $@ -ldflags="$(FLAGS)" .
 
 clean:
 	rm -f bin/*
