@@ -11,8 +11,6 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/99designs/smartling/gc"
-
 	"github.com/99designs/api-sdk-go"
 	"github.com/codegangsta/cli"
 )
@@ -352,12 +350,24 @@ var projectGCCommand = cli.Command{
 		{
 			Name:  "branch",
 			Usage: "Collect garbage strings for the current branch",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "dry-run",
+					Usage: "Does nothing but output logs",
+				},
+			},
 			Action: func(c *cli.Context) error {
-				return gc.Branch()
+				if c.Bool("dry-run") {
+					log.Println("Dry running...")
+				}
+				return GcBranch(client, c.Bool("dry-run"))
 			},
 		},
 	},
 	Action: func(c *cli.Context) error {
-		return gc.Project()
+		if c.Bool("dry-run") {
+			log.Println("Dry running...")
+		}
+		return GcProject(client, c.Bool("dry-run"))
 	},
 }
