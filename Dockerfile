@@ -1,8 +1,8 @@
-FROM golang:1.5
+FROM golang:1.12
 
-ADD . /go/src/github.com/99designs/smartling
-RUN cd /go/src/github.com/99designs/smartling && go install ./...
+COPY . /smartling
+RUN cd /smartling && go mod download && go install ./...
 RUN mkdir /work
 WORKDIR /work
 
-ENTRYPOINT ["/go/bin/smartling"]
+ENTRYPOINT ["smartling"]
