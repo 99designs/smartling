@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/99designs/api-sdk-go"
-	"github.com/codegangsta/cli"
+	"github.com/urfave/cli"
 )
 
 var client *FaultTolerantClient
