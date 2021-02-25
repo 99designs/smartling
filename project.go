@@ -242,7 +242,7 @@ func pushProjectFile(projectFilepath, prefix string) string {
 	_, err := client.Upload(req)
 	logAndQuitIfError(err)
 
-	fmt.Println("Uploaded", remoteFile)
+	log.Println("Uploaded", remoteFile)
 	return remoteFile
 }
 
