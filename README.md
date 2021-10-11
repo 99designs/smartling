@@ -8,7 +8,8 @@ The `smartling` CLI tool provides a familiar unix-like command interface to the 
 
 ### Installing
  - download from the releases page
- - `go get github.com/99designs/smartling`
+ - `cd <smartling-path>`
+ - `go install`
  - run it as a docker container `docker run --rm -v MyProject:/work 99designs/smartling ls`
 
 ### Usage
