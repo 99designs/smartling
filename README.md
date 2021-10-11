@@ -7,10 +7,10 @@ A CLI tool implementation of the [Smartling Translation API](https://developer.s
 The `smartling` CLI tool provides a familiar unix-like command interface to the Smartling API, as well as providing a `project` command to manage a project's local files.
 
 ### Installing
- - download from the releases page
- - `cd <smartling-path>`
- - `go install`
- - run it as a docker container `docker run --rm -v MyProject:/work 99designs/smartling ls`
+
+Install smartling by downloading the binary from the releases page.
+
+Or you can run it as a docker container e.g. `docker run --rm -v MyProject:/work 99designs/smartling ls`
 
 ### Usage
 
