@@ -71,3 +71,12 @@ parser_config:                                              # Add a custom confi
   placeholder_format_custom: "%[^%]+%"
 pull_file_path: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}" # The naming scheme when pulling files
 ```
+
+### How to make a release
+
+1. Follow the appropriate semver convention and [make a release in github](https://github.com/99designs/smartling/releases). 
+2. Compile Smartling by running our custom build script:
+```sh
+./script/build.sh # builds binary into the folder ./dist
+```
+3. Upload all binary files to github release
