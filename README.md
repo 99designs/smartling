@@ -93,3 +93,17 @@ $ make release
 4. Select the tag version you just created
 
 5. Attach the binaries from `./bin/*`
+
+### How to build multi-arch DockerHub image
+
+If building a multi-arch image for the first time, you may need to switch your builder. Checkout Docker guide on [building multi-arch images](https://docs.docker.com/desktop/multi-arch/#build-multi-arch-images-with-buildx)
+
+```
+$ docker buildx create --use
+```
+
+Build and push to target repository
+
+```
+$ docker buildx build --push --tag 99designs/smartling:x.x.x --platform linux/amd64,linux/arm64 .
+```
