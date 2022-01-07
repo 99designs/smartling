@@ -74,9 +74,22 @@ pull_file_path: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}" # The naming s
 
 ### How to make a release
 
-1. Follow the appropriate semver convention and [make a release in github](https://github.com/99designs/smartling/releases). 
-2. Compile Smartling by running our custom build script:
-```sh
-./script/build.sh # builds binary into the folder ./dist
+1. Check out the the commit you want to create a release for, and tag it with appropriate semver convention:
+
 ```
-3. Upload all binary files to github release
+$ git tag vx.x.x
+$ git push --tags
+```
+
+2. Create the binaries:
+
+```
+$ make clean
+$ make release
+```
+
+3. Go to https://github.com/99designs/smartling/releases/new
+
+4. Select the tag version you just created
+
+5. Attach the binaries from `./bin/*`
