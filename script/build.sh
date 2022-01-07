@@ -2,7 +2,7 @@
 
 package_name=smartling
 
-platforms=("linux/amd64" "windows/386" "darwin/amd64")
+platforms=("linux/amd64" "windows/386" "darwin/amd64" "linux/arm64" "darwin/arm64")
 
 rm -rf dist/*
 
