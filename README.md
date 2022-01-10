@@ -71,3 +71,39 @@ parser_config:                                              # Add a custom confi
   placeholder_format_custom: "%[^%]+%"
 pull_file_path: "{{ TrimSuffix .Path .Ext }}.{{.Locale}}{{.Ext}}" # The naming scheme when pulling files
 ```
+
+### How to make a release
+
+1. Check out the the commit you want to create a release for, and tag it with appropriate semver convention:
+
+```
+$ git tag vx.x.x
+$ git push --tags
+```
+
+2. Create the binaries:
+
+```
+$ make clean
+$ make release
+```
+
+3. Go to https://github.com/99designs/smartling/releases/new
+
+4. Select the tag version you just created
+
+5. Attach the binaries from `./bin/*`
+
+### How to build multi-arch DockerHub image
+
+If building a multi-arch image for the first time, you may need to switch your builder. Checkout Docker guide on [building multi-arch images](https://docs.docker.com/desktop/multi-arch/#build-multi-arch-images-with-buildx)
+
+```
+$ docker buildx create --use
+```
+
+Build and push to target repository
+
+```
+$ docker buildx build --push --tag 99designs/smartling:x.x.x --platform linux/amd64,linux/arm64 .
+```
